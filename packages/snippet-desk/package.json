@@ -1,0 +1,76 @@
+{
+    "name": "snippet-desk",
+    "displayName": "snippet desk",
+    "description": "create your own snippets in a easy way",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.52.0"
+    },
+    "categories": [
+        "Snippets",
+        "Visualization",
+        "Other"
+    ],
+    "activationEvents": [
+        "onCommand:snippetDesk.open",
+        "onCommand:snippetDesk.openView",
+        "onView:snippetDesk-explorer-list",
+        "onWebviewPanel:snippetDesk"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "snippetDesk-explorer",
+                    "title": "Snippet Desk Explorer",
+                    "icon": "static/code.svg"
+                }
+            ]
+        },
+        "views": {
+            "snippetDesk-explorer": [
+                {
+                    "id": "snippetDesk-explorer-list",
+                    "type": "webview",
+                    "name": "snippet list",
+                    "icon": "static/code.svg",
+                    "contextualTitle": "Snippet Desk Explorer"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "snippetDesk.open",
+                "title": "Open Snippet Desk",
+                "category": "Snippet Desk"
+            },
+            {
+                "command": "snippetDesk.openView",
+                "title": "Open Snippet Desk view",
+                "category": "Snippet Desk"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.52.0",
+        "@types/glob": "^7.1.3",
+        "@types/mocha": "^8.0.4",
+        "@types/node": "^12.11.7",
+        "eslint": "^7.19.0",
+        "@typescript-eslint/eslint-plugin": "^4.14.1",
+        "@typescript-eslint/parser": "^4.14.1",
+        "glob": "^7.1.6",
+        "mocha": "^8.2.1",
+        "typescript": "^4.1.3",
+        "vscode-test": "^1.5.0"
+    }
+}
