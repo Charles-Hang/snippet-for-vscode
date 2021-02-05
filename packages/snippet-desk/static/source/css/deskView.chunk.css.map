@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack://src/DeskView/app.module.css"],"names":[],"mappings":"AAAA,gBACI,SACJ","file":"deskView.chunk.css","sourcesContent":[".app {\n    color: red;\n}\n"]}

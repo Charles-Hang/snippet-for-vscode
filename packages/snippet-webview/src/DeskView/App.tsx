@@ -1,7 +1,8 @@
 import React from 'react';
+import styles from './app.module.css';
 
 function App() {
-    return <div>desk view webview</div>;
+    return <div className={styles.app}>desk view webview</div>;
 }
 
 export default App;

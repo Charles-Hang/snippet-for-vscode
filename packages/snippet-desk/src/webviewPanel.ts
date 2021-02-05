@@ -15,7 +15,7 @@ export default function registerPanel(context: vscode.ExtensionContext) {
             async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
                 console.log(`Got state: ${state}`);
                 // Reset the webview options so we use latest uri for `localResourceRoots`.
-                webviewPanel.webview.options = getWebviewOptions(context.extensionUri, 'panel');
+                webviewPanel.webview.options = getWebviewOptions(context.extensionUri, 'source');
                 SnippetDeskPanel.revive(webviewPanel, context.extensionUri);
             }
         });
@@ -51,7 +51,7 @@ class SnippetDeskPanel {
             SnippetDeskPanel.viewType,
             'Snippet Desk',
             column || vscode.ViewColumn.One,
-            getWebviewOptions(extensionUri, 'panel')
+            getWebviewOptions(extensionUri, 'source')
         );
 
         SnippetDeskPanel.currentPanel = new SnippetDeskPanel(panel, extensionUri);
@@ -117,15 +117,15 @@ class SnippetDeskPanel {
 
     private _getHtmlForWebview(webview: vscode.Webview) {
         // Local path to main script run in the webview
-        const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'static/panel/js', 'main.chunk.js');
-        const runtimeScriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'static/panel/js', 'runtime-main.js');
+        const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'static/source/js', 'desk.chunk.js');
+        const runtimeScriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'static/source/js', 'runtime-desk.js');
 
         // And the uri we use to load this script in the webview
         const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
         const runtimeScriptUri = webview.asWebviewUri(runtimeScriptPathOnDisk);
 
         // Local path to css styles
-        const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'static/panel/css', 'main.chunk.css');
+        const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'static/source/css', 'desk.chunk.css');
 
         // Uri to load styles into webview
         const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
