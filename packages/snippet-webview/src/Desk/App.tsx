@@ -1,8 +1,12 @@
 import React from 'react';
-import styles from './app.module.css';
+import { Box } from '@chakra-ui/react';
 
 function App() {
-    return <div className={styles.app}>desk webview</div>;
+    return (
+        <Box bg="gray.500" color="yellow.500" borderRadius="base">
+            this is a box
+        </Box>
+    );
 }
 
 export default App;
