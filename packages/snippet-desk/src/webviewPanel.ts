@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { getNonce, getWebviewOptions } from './utils';
 
 export default function registerPanel(context: vscode.ExtensionContext) {
-    console.log(context.extensionUri, 'uri');
     context.subscriptions.push(
         vscode.commands.registerCommand('snippetDesk.open', () => {
             SnippetDeskPanel.createOrShow(context.extensionUri);
@@ -31,7 +30,7 @@ class SnippetDeskPanel {
      */
     public static currentPanel: SnippetDeskPanel | undefined;
 
-    public static readonly viewType = 'snippetDesk';
+    public static readonly viewType = 'snippet-desk';
 
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
