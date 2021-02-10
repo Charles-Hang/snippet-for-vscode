@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import Context, { IData, defaultData, defaultContextValue } from './context';
+import View from './View';
 
 function App() {
+    const isMountedRef = useRef(false);
     const [vscode, setVscode] = useState();
-    const [data, setData] = useState({});
+    const [data, setData] = useState<IData>(defaultData);
+    const [contextValue, setContextValue] = useState(defaultContextValue);
 
     useEffect(() => {
         const vscode = window.acquireVsCodeApi();
@@ -23,7 +27,26 @@ function App() {
         });
     }, []);
 
-    return <pre>{JSON.stringify(data, undefined, 4)}</pre>;
+    useEffect(() => {
+        if (!isMountedRef.current) {
+            return;
+        }
+
+        setContextValue((preValue) => ({
+            ...preValue,
+            data
+        }));
+    }, [data]);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+    }, []);
+
+    return (
+        <Context.Provider value={contextValue}>
+            <View />
+        </Context.Provider>
+    );
 }
 
 export default App;

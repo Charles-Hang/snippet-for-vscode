@@ -3,7 +3,7 @@ import { getNonce, getWebviewOptions } from './utils';
 import {
     generateSnippetsInfo,
     generateWorkspaceSnippetsInfo,
-    userSnippetsInfo,
+    globalSnippetsInfo,
     workspaceSnippetsInfo
 } from './snippets';
 
@@ -48,9 +48,10 @@ export class SnippetDeskViewProvider implements vscode.WebviewViewProvider {
             return;
         }
 
-        const data = Object.assign({}, userSnippetsInfo, workspaceSnippetsInfo);
-
-        this._view.webview.postMessage({ type: 'updateData', data });
+        this._view.webview.postMessage({
+            type: 'updateData',
+            data: { globalSnippetsInfo, workspaceSnippetsInfo }
+        });
     }
 
     public refreshSnippets() {

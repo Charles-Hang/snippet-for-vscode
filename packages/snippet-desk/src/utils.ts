@@ -7,7 +7,7 @@ const args = parseCLIArgs();
 const userDataPath = getUserDataPath(args);
 const userSettingsPath = join(userDataPath, 'User');
 
-export const userSnippetsPath = join(userSettingsPath, 'snippets');
+export const globalSnippetsPath = join(userSettingsPath, 'snippets');
 
 export function getWorkspaceSnippetsPaths() {
     return (

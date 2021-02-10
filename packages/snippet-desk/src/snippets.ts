@@ -1,23 +1,29 @@
 import { join, extname, basename } from 'path';
 import { readdirSync, readFileSync } from 'fs';
-import { userSnippetsPath, getWorkspaceSnippetsPaths } from './utils';
+import { globalSnippetsPath, getWorkspaceSnippetsPaths } from './utils';
 
-interface ISnippetsInfoItem {
-    type: 'global' | 'project';
-    project?: string;
+interface IGlobalSnippetsInfoItem {
     name: string;
     extname: string;
     snippets: Record<any, any>;
 }
 
-type SnippetsInfo = Record<string, ISnippetsInfoItem>;
+interface IWorkspaceSnippetsInfoItem {
+    project: string;
+    name: string;
+    extname: string;
+    snippets: Record<any, any>;
+}
 
-export let userSnippetsInfo: SnippetsInfo = {};
-export let workspaceSnippetsInfo: SnippetsInfo = {};
+type GlobalSnippetsInfo = Record<string, IGlobalSnippetsInfoItem>;
+type WorkspaceSnippetsInfo = Record<string, IWorkspaceSnippetsInfoItem>;
 
-function getUserSnippetsFiles() {
+export let globalSnippetsInfo: GlobalSnippetsInfo = {};
+export let workspaceSnippetsInfo: WorkspaceSnippetsInfo = {};
+
+function getGlobalSnippetsFiles() {
     try {
-        return readdirSync(userSnippetsPath).map((filename) => join(userSnippetsPath, filename));
+        return readdirSync(globalSnippetsPath).map((filename) => join(globalSnippetsPath, filename));
     } catch (error) {
         return [];
     }
@@ -37,14 +43,13 @@ function getWorkspaceSnippetFiles() {
     }, [] as string[]);
 }
 
-function generateUserSnippetsInfo() {
-    getUserSnippetsFiles().map((fsPath) => {
+function generateGlobalSnippetsInfo() {
+    getGlobalSnippetsFiles().map((fsPath) => {
         const text = readFileSync(fsPath, 'utf-8');
         const data = new Function('return ' + text)();
         const ext = extname(fsPath);
 
-        userSnippetsInfo[fsPath] = {
-            type: 'global',
+        globalSnippetsInfo[fsPath] = {
             name: basename(fsPath, ext),
             extname: ext,
             snippets: data
@@ -60,7 +65,6 @@ export function generateWorkspaceSnippetsInfo() {
         const ext = extname(fsPath);
 
         workspaceSnippetsInfo[fsPath] = {
-            type: 'project',
             project,
             name: basename(fsPath, ext),
             extname: ext,
@@ -70,6 +74,6 @@ export function generateWorkspaceSnippetsInfo() {
 }
 
 export function generateSnippetsInfo() {
-    generateUserSnippetsInfo();
+    generateGlobalSnippetsInfo();
     generateWorkspaceSnippetsInfo();
 }
