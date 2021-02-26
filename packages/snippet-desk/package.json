@@ -13,6 +13,7 @@
     ],
     "activationEvents": [
         "onCommand:snippetDesk.open",
+        "onCommand:snippetDesk.refreshSnippets",
         "onView:snippet-desk-view",
         "onWebviewPanel:snippet-desk"
     ],
@@ -42,6 +43,17 @@
                 {
                     "command": "snippetDesk.refreshWorkspaceSnippets",
                     "when": "false"
+                },
+                {
+                    "command": "snippetDesk.deleteSnippetFile",
+                    "when": "false"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "snippetDesk.refreshSnippets",
+                    "when": "view == snippet-desk-view",
+                    "group": "navigation"
                 }
             ]
         },
@@ -59,6 +71,15 @@
             {
                 "command": "snippetDesk.refreshSnippets",
                 "title": "Refresh Snippets",
+                "category": "Snippet Desk",
+                "icon": {
+                    "light": "static/lightRefresh.svg",
+                    "dark": "static/darkRefresh.svg"
+                }
+            },
+            {
+                "command": "snippetDesk.deleteSnippetFile",
+                "title": "Delete Snippet File",
                 "category": "Snippet Desk"
             }
         ]

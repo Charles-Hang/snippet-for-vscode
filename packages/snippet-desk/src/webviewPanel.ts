@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 import { getNonce, getWebviewOptions } from './utils';
+import { IMessage } from './type';
+import { globalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
+
+type Message = IMessage<'updateSnippetsInfo'>;
 
 export default function registerPanel(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -24,13 +28,16 @@ export default function registerPanel(context: vscode.ExtensionContext) {
 /**
  * Manages snippet desk webview panels
  */
-class SnippetDeskPanel {
+export class SnippetDeskPanel {
     /**
      * Track the currently panel. Only allow a single panel to exist at a time.
      */
     public static currentPanel: SnippetDeskPanel | undefined;
 
     public static readonly viewType = 'snippet-desk';
+
+    // panel打开后需要初始化的消息队列
+    public static initQueue: Message[] = [];
 
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
@@ -85,15 +92,32 @@ class SnippetDeskPanel {
         // Handle messages from the webview
         this._panel.webview.onDidReceiveMessage(
             (message) => {
-                switch (message.command) {
-                    case 'alert':
-                        vscode.window.showErrorMessage(message.text);
-                        return;
+                switch (message.type) {
+                    case 'didMount':
+                        this.updateSnippetsInfo();
+                        while (SnippetDeskPanel.initQueue.length) {
+                            this.postMessage(SnippetDeskPanel.initQueue.shift() as Message);
+                        }
+                        break;
+                    case 'deleteSnippetFile':
+                        vscode.commands.executeCommand('snippetDesk.deleteSnippetFile', message.data);
+                        break;
                 }
             },
             null,
             this._disposables
         );
+    }
+
+    public postMessage(message: Message) {
+        this._panel.webview.postMessage(message);
+    }
+
+    public updateSnippetsInfo() {
+        this.postMessage({
+            type: 'updateSnippetsInfo',
+            data: { globalSnippetsInfo, workspaceSnippetsInfo }
+        });
     }
 
     public dispose() {

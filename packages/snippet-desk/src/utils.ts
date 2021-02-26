@@ -79,3 +79,9 @@ function getDefaultUserDataPath() {
     // insider、codium、OSS版未考虑
     return join(appDataPath, 'Code');
 }
+
+export async function showConfirmModal(title: string) {
+    const res = await vscode.window.showInformationMessage(title, { modal: true }, 'confirm');
+
+    return res === 'confirm';
+}

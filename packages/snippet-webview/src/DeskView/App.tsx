@@ -1,16 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
-import Context, { IData, defaultData, defaultContextValue } from './context';
+import Context, { defaultSnippetsInfo, defaultContextValue } from './context';
+import { ISnippetsInfo } from '../type';
 import View from './View';
 
 function App() {
     const isMountedRef = useRef(false);
-    const [vscode, setVscode] = useState();
-    const [data, setData] = useState<IData>(defaultData);
+    const [snippetsInfo, setSnippetsInfo] = useState<ISnippetsInfo>(defaultSnippetsInfo);
     const [contextValue, setContextValue] = useState(defaultContextValue);
 
     useEffect(() => {
         const vscode = window.acquireVsCodeApi();
-        setVscode(vscode);
+        setContextValue((preValue) => ({
+            ...preValue,
+            vscode
+        }));
         vscode.postMessage({ type: 'didMount' });
     }, []);
 
@@ -18,8 +21,8 @@ function App() {
         window.addEventListener('message', (event) => {
             const message = event.data;
             switch (message.type) {
-                case 'updateData':
-                    setData(message.data);
+                case 'updateSnippetsInfo':
+                    setSnippetsInfo(message.data);
                     break;
                 default:
                     break;
@@ -34,9 +37,9 @@ function App() {
 
         setContextValue((preValue) => ({
             ...preValue,
-            data
+            snippetsInfo
         }));
-    }, [data]);
+    }, [snippetsInfo]);
 
     useEffect(() => {
         isMountedRef.current = true;

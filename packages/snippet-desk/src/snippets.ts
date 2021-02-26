@@ -1,18 +1,21 @@
 import { join, extname, basename } from 'path';
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, mkdirSync, existsSync } from 'fs';
+import * as vscode from 'vscode';
 import { globalSnippetsPath, getWorkspaceSnippetsPaths } from './utils';
+
+type Snippets = Record<any, any>;
 
 interface IGlobalSnippetsInfoItem {
     name: string;
     extname: string;
-    snippets: Record<any, any>;
+    snippets: Snippets;
 }
 
 interface IWorkspaceSnippetsInfoItem {
     project: string;
     name: string;
     extname: string;
-    snippets: Record<any, any>;
+    snippets: Snippets;
 }
 
 type GlobalSnippetsInfo = Record<string, IGlobalSnippetsInfoItem>;
@@ -44,36 +47,146 @@ function getWorkspaceSnippetFiles() {
 }
 
 function generateGlobalSnippetsInfo() {
-    getGlobalSnippetsFiles().map((fsPath) => {
-        const text = readFileSync(fsPath, 'utf-8');
-        const data = new Function('return ' + text)();
-        const ext = extname(fsPath);
+    globalSnippetsInfo = {};
+    getGlobalSnippetsFiles().forEach((fsPath) => {
+        try {
+            const text = readFileSync(fsPath, 'utf-8');
+            const data = new Function('return ' + text)();
+            const ext = extname(fsPath);
 
-        globalSnippetsInfo[fsPath] = {
-            name: basename(fsPath, ext),
-            extname: ext,
-            snippets: data
-        };
+            globalSnippetsInfo[fsPath] = {
+                name: basename(fsPath, ext),
+                extname: ext,
+                snippets: data
+            };
+        } catch (error) {
+            //
+        }
     });
 }
 
 export function generateWorkspaceSnippetsInfo() {
-    getWorkspaceSnippetFiles().map((fsPath) => {
-        const text = readFileSync(fsPath, 'utf-8');
-        const data = new Function('return ' + text)();
-        const project = fsPath.split('/').slice(-3, -2)[0];
-        const ext = extname(fsPath);
+    workspaceSnippetsInfo = {};
+    getWorkspaceSnippetFiles().forEach((fsPath) => {
+        try {
+            const text = readFileSync(fsPath, 'utf-8');
+            const data = new Function('return ' + text)();
+            const project = fsPath.split('/').slice(-3, -2)[0];
+            const ext = extname(fsPath);
 
-        workspaceSnippetsInfo[fsPath] = {
-            project,
-            name: basename(fsPath, ext),
-            extname: ext,
-            snippets: data
-        };
+            workspaceSnippetsInfo[fsPath] = {
+                project,
+                name: basename(fsPath, ext),
+                extname: ext,
+                snippets: data
+            };
+        } catch (error) {
+            //
+        }
     });
 }
 
 export function generateSnippetsInfo() {
     generateGlobalSnippetsInfo();
     generateWorkspaceSnippetsInfo();
+}
+
+export function saveSnippets({
+    type,
+    fsPath,
+    snippets
+}: {
+    type: 'global' | 'workspace';
+    fsPath: string;
+    snippets: Snippets;
+}) {
+    try {
+        writeFileSync(fsPath, JSON.stringify(snippets, undefined, 4), 'utf-8');
+        if (type === 'global') {
+            const ext = extname(fsPath);
+
+            globalSnippetsInfo[fsPath] = {
+                name: basename(fsPath, ext),
+                extname: ext,
+                snippets
+            };
+        }
+        if (type === 'workspace') {
+            const project = fsPath.split('/').slice(-3, -2)[0];
+            const ext = extname(fsPath);
+
+            workspaceSnippetsInfo[fsPath] = {
+                project,
+                name: basename(fsPath, ext),
+                extname: ext,
+                snippets
+            };
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(error.message);
+    }
+}
+
+// TODO: test when oldPath doesn't exist
+export function renameSnippetFile(type: 'global' | 'workspace', oldPath: string, newPath: string) {
+    try {
+        renameSync(oldPath, newPath);
+        if (type === 'global') {
+            const ext = extname(newPath);
+
+            globalSnippetsInfo[newPath] = {
+                name: basename(newPath, ext),
+                extname: ext,
+                snippets: globalSnippetsInfo[oldPath].snippets
+            };
+            delete globalSnippetsInfo[oldPath];
+        }
+        if (type === 'workspace') {
+            const project = newPath.split('/').slice(-3, -2)[0];
+            const ext = extname(newPath);
+
+            workspaceSnippetsInfo[newPath] = {
+                project,
+                name: basename(newPath, ext),
+                extname: ext,
+                snippets: workspaceSnippetsInfo[oldPath].snippets
+            };
+            delete workspaceSnippetsInfo[oldPath];
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(error.message);
+    }
+}
+
+export function deleteSnippetFile(fsPath: string) {
+    try {
+        unlinkSync(fsPath);
+        if (globalSnippetsInfo[fsPath]) {
+            delete globalSnippetsInfo[fsPath];
+        }
+        if (workspaceSnippetsInfo[fsPath]) {
+            delete workspaceSnippetsInfo[fsPath];
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(error.message);
+    }
+}
+
+function makeDirectory(path: string) {
+    try {
+        mkdirSync(path);
+    } catch (error) {
+        vscode.window.showErrorMessage(error.message);
+    }
+}
+
+export function makeDirectoryIfDontExist(path: string) {
+    try {
+        if (existsSync(path)) {
+            return;
+        }
+        makeDirectory(path);
+    } catch (error) {
+        vscode.window.showErrorMessage(error.message);
+    }
 }

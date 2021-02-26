@@ -28,6 +28,26 @@ const theme = extendTheme({
             baseStyle: {
                 fontWeight: 'var(--vscode-font-weight)',
                 fontSize: 'var(--vscode-font-size)'
+            },
+            variants: {
+                primary: {
+                    border: '1px solid',
+                    borderColor: 'var(--vscode-list-highlightForeground)',
+                    color: 'var(--vscode-list-highlightForeground)',
+                    fontSize: 'var(--vscode-font-size)',
+                    padding: '0 6px',
+                    height: 'auto',
+                    borderRadius: '4px'
+                },
+                error: {
+                    border: '1px solid',
+                    borderColor: 'var(--vscode-editorError-foreground)',
+                    color: 'var(--vscode-editorError-foreground)',
+                    fontSize: 'var(--vscode-font-size)',
+                    padding: '0 6px',
+                    height: 'auto',
+                    borderRadius: '4px'
+                }
             }
         },
         Accordion: {

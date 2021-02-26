@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { ISnippetsInfo, IVscode } from '../type';
+import { ISnippetsInfo } from '../type';
 
 export const defaultSnippetsInfo: ISnippetsInfo = {
     globalSnippetsInfo: {
@@ -73,7 +73,7 @@ export const defaultSnippetsInfo: ISnippetsInfo = {
         }
     }
 };
-export const defaultContextValue = { snippetsInfo: defaultSnippetsInfo, vscode: undefined as IVscode | undefined };
+export const defaultContextValue = { snippetsInfo: defaultSnippetsInfo };
 
 const Context = createContext(defaultContextValue);
 

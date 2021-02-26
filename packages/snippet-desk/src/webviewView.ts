@@ -1,15 +1,16 @@
 import * as vscode from 'vscode';
 import { getNonce, getWebviewOptions } from './utils';
-import {
-    generateSnippetsInfo,
-    generateWorkspaceSnippetsInfo,
-    globalSnippetsInfo,
-    workspaceSnippetsInfo
-} from './snippets';
+import { generateWorkspaceSnippetsInfo, globalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
+import { IMessage } from './type';
+
+type Message = IMessage<'updateSnippetsInfo'>;
+
+export let currentViewProvider: SnippetDeskViewProvider | undefined;
 
 export default function registerView(context: vscode.ExtensionContext) {
     const provider = new SnippetDeskViewProvider(context.extensionUri);
 
+    currentViewProvider = provider;
     context.subscriptions.push(vscode.window.registerWebviewViewProvider(SnippetDeskViewProvider.viewType, provider));
     context.subscriptions.push(
         vscode.commands.registerCommand('snippetDesk.refreshWorkspaceSnippets', () => {
@@ -34,33 +35,32 @@ export class SnippetDeskViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.options = getWebviewOptions(this._extensionUri, 'source');
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-        webviewView.webview.onDidReceiveMessage((data) => {
-            switch (data.type) {
+        webviewView.webview.onDidReceiveMessage((message) => {
+            switch (message.type) {
                 case 'didMount':
-                    this.updateData();
+                    this.updateSnippetsInfo();
+                    break;
+                case 'deleteSnippetFile':
+                    vscode.commands.executeCommand('snippetDesk.deleteSnippetFile', message.data);
                     break;
             }
         });
     }
 
-    private updateData() {
+    public postMessage(message: Message) {
         if (!this._view) {
             return;
         }
 
-        this._view.webview.postMessage({
-            type: 'updateData',
-            data: { globalSnippetsInfo, workspaceSnippetsInfo }
-        });
+        this._view.show?.(true);
+        this._view.webview.postMessage(message);
     }
 
-    public refreshSnippets() {
-        if (!this._view) {
-            return;
-        }
-
-        generateSnippetsInfo();
-        this.updateData();
+    public updateSnippetsInfo() {
+        this.postMessage({
+            type: 'updateSnippetsInfo',
+            data: { globalSnippetsInfo, workspaceSnippetsInfo }
+        });
     }
 
     public refreshWorkspaceSnippets() {
@@ -69,15 +69,7 @@ export class SnippetDeskViewProvider implements vscode.WebviewViewProvider {
         }
 
         generateWorkspaceSnippetsInfo();
-        this.updateData();
-    }
-
-    // TODO: delete
-    public addColor() {
-        if (this._view) {
-            this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
-            this._view.webview.postMessage({ type: 'addColor' });
-        }
+        this.updateSnippetsInfo();
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {

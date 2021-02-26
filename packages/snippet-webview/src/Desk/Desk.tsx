@@ -13,28 +13,25 @@ import {
     List,
     ListItem,
     Flex,
-    chakra
+    Button
 } from '@chakra-ui/react';
-import { VscChevronRight, VscChevronDown, VscAdd, VscEdit, VscTrash } from 'react-icons/vsc';
+import { VscChevronRight, VscChevronDown } from 'react-icons/vsc';
 import Context from './context';
 import { GlobalSnippetsInfo, WorkspaceSnippetsInfo } from '../type';
 
-const AddIcon = chakra(VscAdd);
-const EditIcon = chakra(VscEdit);
-const TrashIcon = chakra(VscTrash);
-
-function View() {
+function Desk() {
     const context = useContext(Context);
     const {
         snippetsInfo: { globalSnippetsInfo, workspaceSnippetsInfo }
     } = context;
 
     return (
-        <Tabs isFitted>
+        <Tabs>
             <TabList>
                 <Tab
                     textStyle="vscode"
-                    p="0"
+                    py="0"
+                    px="12"
                     _active={{
                         background: 'transparent'
                     }}
@@ -46,7 +43,8 @@ function View() {
                 </Tab>
                 <Tab
                     textStyle="vscode"
-                    p="0"
+                    py="0"
+                    px="12"
                     _active={{
                         background: 'transparent'
                     }}
@@ -76,8 +74,6 @@ interface IPanelProps<T extends 'global' | 'project'> {
 
 function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const { type, snippetsInfo } = props;
-    const context = useContext(Context);
-    const { vscode } = context;
     const [expandedIndex, setExpandedIndex] = useState<number[]>([]);
     const [hoveredItemIndex, setHoveredItemIndex] = useState(-1);
     const [hoveredPanelIndex, setHoveredPanelIndex] = useState(-1);
@@ -94,9 +90,6 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const handleClearHoverIndex = () => {
         setHoveredItemIndex(-1);
         setHoveredPanelIndex(-1);
-    };
-    const handleDeleteSnippetFile = (file: string) => {
-        vscode?.postMessage({ type: 'deleteSnippetFile', data: file });
     };
 
     return (
@@ -118,8 +111,10 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                 </Text>
                                 {hoveredItemIndex === index && (
                                     <Flex>
-                                        <EditIcon cursor="pointer" mr="4" />
-                                        <TrashIcon cursor="pointer" onClick={() => handleDeleteSnippetFile(filePath)} />
+                                        <Button mr="8" variant="primary">
+                                            edit
+                                        </Button>
+                                        <Button variant="error">delete</Button>
                                     </Flex>
                                 )}
                             </Flex>
@@ -139,9 +134,13 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                             </Text>
                                             {hoveredItemIndex === index && hoveredPanelIndex === panelIndex && (
                                                 <Flex>
-                                                    <AddIcon cursor="pointer" mr="4" />
-                                                    <EditIcon cursor="pointer" mr="4" />
-                                                    <TrashIcon cursor="pointer" />
+                                                    <Button mr="8" variant="primary">
+                                                        insert
+                                                    </Button>
+                                                    <Button mr="8" variant="primary">
+                                                        edit
+                                                    </Button>
+                                                    <Button variant="error">delete</Button>
                                                 </Flex>
                                             )}
                                         </Flex>
@@ -156,4 +155,4 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     );
 }
 
-export default View;
+export default Desk;
