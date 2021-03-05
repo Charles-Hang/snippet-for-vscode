@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, ChangeEvent, MouseEvent, KeyboardEvent } from 'react';
 import {
     Text,
     Accordion,
@@ -13,11 +13,15 @@ import {
     List,
     ListItem,
     Flex,
-    Button
+    Button,
+    Input,
+    InputGroup,
+    InputRightElement
 } from '@chakra-ui/react';
 import { VscChevronRight, VscChevronDown } from 'react-icons/vsc';
-import Context from './context';
 import { GlobalSnippetsInfo, WorkspaceSnippetsInfo } from '../type';
+import Context from './context';
+import lang from './lang';
 
 function Desk() {
     const context = useContext(Context);
@@ -39,7 +43,7 @@ function Desk() {
                         color: 'var(--vscode-list-highlightForeground)',
                         borderBottomColor: 'var(--vscode-list-highlightForeground)'
                     }}>
-                    Global
+                    {lang.Global()}
                 </Tab>
                 <Tab
                     textStyle="vscode"
@@ -52,7 +56,7 @@ function Desk() {
                         color: 'var(--vscode-list-highlightForeground)',
                         borderBottomColor: 'var(--vscode-list-highlightForeground)'
                     }}>
-                    Project
+                    {lang.Project()}
                 </Tab>
             </TabList>
             <TabPanels>
@@ -74,9 +78,13 @@ interface IPanelProps<T extends 'global' | 'project'> {
 
 function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const { type, snippetsInfo } = props;
+    const context = useContext(Context);
+    const { vscode } = context;
     const [expandedIndex, setExpandedIndex] = useState<number[]>([]);
     const [hoveredItemIndex, setHoveredItemIndex] = useState(-1);
     const [hoveredPanelIndex, setHoveredPanelIndex] = useState(-1);
+    const [editingKey, setEditingKey] = useState('');
+    const [newFilename, setNewFilename] = useState('');
 
     const handleExpandedIndexChange = (index: number[]) => {
         setExpandedIndex(index);
@@ -91,6 +99,52 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
         setHoveredItemIndex(-1);
         setHoveredPanelIndex(-1);
     };
+    const handleDeleteSnippetFile = (file: string) => {
+        vscode?.postMessage({ type: 'deleteSnippetFile', data: file });
+    };
+    const handleEditName = (key: string, e: MouseEvent) => {
+        e.stopPropagation();
+        setEditingKey(key);
+    };
+    const resetRenameStatus = () => {
+        setEditingKey('');
+        setNewFilename('');
+    };
+    const handleRenameInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setNewFilename(e.target.value);
+    };
+    const handleRenameSnippetFile = (fsPath: string, extname: string) => {
+        const splits = fsPath.split('/');
+        const length = splits.length;
+        const newPath = splits
+            .reduce((res, item, index) => {
+                if (index >= length - 1) {
+                    res.push(`${newFilename}${extname}`);
+
+                    return res;
+                }
+
+                res.push(item);
+                return res;
+            }, [] as string[])
+            .join('/');
+
+        vscode?.postMessage({ type: 'renameSnippetFile', data: { oldPath: fsPath, newPath } });
+        resetRenameStatus();
+    };
+    const handleRenamePress = (fsPath: string, extname: string, e: KeyboardEvent<HTMLInputElement>) => {
+        if ((e.charCode || e.keyCode) === 13 || (e as any).code === 'Enter') {
+            handleRenameSnippetFile(fsPath, extname);
+        }
+    };
+    const handleRenameKeyUp = (e: KeyboardEvent<HTMLInputElement>) => {
+        if ((e.charCode || e.keyCode) === 27 || (e as any).code === 'Escape') {
+            resetRenameStatus();
+        }
+    };
+    const handleCancelRenameSnippetFile = () => {
+        resetRenameStatus();
+    };
 
     return (
         <Accordion
@@ -104,17 +158,44 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                         <AccordionButton cursor="default">
                             {expandedIndex.includes(index) ? <VscChevronDown /> : <VscChevronRight />}
                             <Flex flex="1" alignItems="center" justifyContent="space-between" pl="4">
-                                <Text flex="1" isTruncated title={infoItem.name} textAlign="left">
-                                    {type === 'project'
-                                        ? `${infoItem.project.toUpperCase()}: ${infoItem.name}`
-                                        : infoItem.name}
-                                </Text>
-                                {hoveredItemIndex === index && (
+                                {editingKey === filePath ? (
+                                    <InputGroup size="xs" onClick={(e) => e.stopPropagation()}>
+                                        <Input
+                                            pr="110px"
+                                            variant="flushed"
+                                            placeholder={infoItem.name}
+                                            autoFocus
+                                            onChange={handleRenameInputChange}
+                                            onKeyPress={handleRenamePress.bind(null, filePath, infoItem.extname)}
+                                            onKeyUp={handleRenameKeyUp}
+                                        />
+                                        <InputRightElement width="110px">
+                                            <Button
+                                                variant="primary"
+                                                mr="8"
+                                                onClick={() => handleRenameSnippetFile(filePath, infoItem.extname)}>
+                                                {lang.OK()}
+                                            </Button>
+                                            <Button variant="primary" onClick={handleCancelRenameSnippetFile}>
+                                                {lang.Cancel()}
+                                            </Button>
+                                        </InputRightElement>
+                                    </InputGroup>
+                                ) : (
+                                    <Text flex="1" isTruncated title={infoItem.name} textAlign="left">
+                                        {type === 'project'
+                                            ? `${infoItem.project.toUpperCase()}: ${infoItem.name}`
+                                            : infoItem.name}
+                                    </Text>
+                                )}
+                                {hoveredItemIndex === index && editingKey !== filePath && (
                                     <Flex>
-                                        <Button mr="8" variant="primary">
-                                            edit
+                                        <Button mr="8" variant="primary" onClick={handleEditName.bind(null, filePath)}>
+                                            {lang.Edit()}
                                         </Button>
-                                        <Button variant="error">delete</Button>
+                                        <Button variant="error" onClick={() => handleDeleteSnippetFile(filePath)}>
+                                            {lang.Delete()}
+                                        </Button>
                                     </Flex>
                                 )}
                             </Flex>
@@ -135,12 +216,12 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                             {hoveredItemIndex === index && hoveredPanelIndex === panelIndex && (
                                                 <Flex>
                                                     <Button mr="8" variant="primary">
-                                                        insert
+                                                        {lang.Insert()}
                                                     </Button>
                                                     <Button mr="8" variant="primary">
-                                                        edit
+                                                        {lang.Edit()}
                                                     </Button>
-                                                    <Button variant="error">delete</Button>
+                                                    <Button variant="error">{lang.Delete()}</Button>
                                                 </Flex>
                                             )}
                                         </Flex>

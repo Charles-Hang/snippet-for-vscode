@@ -4,7 +4,8 @@ const theme = extendTheme({
     styles: {
         global: {
             '*:focus': {
-                boxShadow: 'none !important'
+                boxShadow: 'none !important',
+                borderColor: 'var(--vscode-list-highlightForeground) !important'
             },
             '*,::before,::after': {
                 'border-color': 'rgb(198, 207, 218)'
@@ -20,6 +21,9 @@ const theme = extendTheme({
             button: {
                 color: 'var(--vscode-foreground)',
                 lineHeight: 1.5
+            },
+            'input:focus': {
+                outline: 'none'
             }
         }
     },

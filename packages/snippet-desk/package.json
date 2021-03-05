@@ -47,6 +47,14 @@
                 {
                     "command": "snippetDesk.deleteSnippetFile",
                     "when": "false"
+                },
+                {
+                    "command": "snippetDesk.renameSnippetFile",
+                    "when": "false"
+                },
+                {
+                    "command": "snippetDesk.deleteSnippet",
+                    "when": "false"
                 }
             ],
             "view/title": [
@@ -80,6 +88,16 @@
             {
                 "command": "snippetDesk.deleteSnippetFile",
                 "title": "Delete Snippet File",
+                "category": "Snippet Desk"
+            },
+            {
+                "command": "snippetDesk.renameSnippetFile",
+                "title": "Rename Snippet File",
+                "category": "Snippet Desk"
+            },
+            {
+                "command": "snippetDesk.deleteSnippet",
+                "title": "Delete Snippet",
                 "category": "Snippet Desk"
             }
         ]

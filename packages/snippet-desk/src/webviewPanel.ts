@@ -3,7 +3,9 @@ import { getNonce, getWebviewOptions } from './utils';
 import { IMessage } from './type';
 import { globalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
 
-type Message = IMessage<'updateSnippetsInfo'>;
+// 需与webview保持同步
+type Message = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage'>;
+type ReceivedMessage = IMessage<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet'>;
 
 export default function registerPanel(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -91,16 +93,25 @@ export class SnippetDeskPanel {
 
         // Handle messages from the webview
         this._panel.webview.onDidReceiveMessage(
-            (message) => {
+            (message: ReceivedMessage) => {
                 switch (message.type) {
-                    case 'didMount':
+                    case 'prepareToInit':
+                        this.postMessage({ type: 'changeLanguage', data: vscode.env.language });
                         this.updateSnippetsInfo();
                         while (SnippetDeskPanel.initQueue.length) {
                             this.postMessage(SnippetDeskPanel.initQueue.shift() as Message);
                         }
+                        this.postMessage({ type: 'completeInit' });
                         break;
                     case 'deleteSnippetFile':
                         vscode.commands.executeCommand('snippetDesk.deleteSnippetFile', message.data);
+                        break;
+                    case 'renameSnippetFile':
+                        const { oldPath, newPath } = message.data || {};
+                        vscode.commands.executeCommand('snippetDesk.renameSnippetFile', oldPath, newPath);
+                        break;
+                    case 'deleteSnippet':
+                        vscode.commands.executeCommand('snippetDesk.deleteSnippet', { ...message.data });
                         break;
                 }
             },

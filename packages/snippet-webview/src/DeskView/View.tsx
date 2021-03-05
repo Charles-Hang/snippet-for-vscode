@@ -1,4 +1,5 @@
-import React, { useContext, useState } from 'react';
+import React, { ChangeEvent, KeyboardEvent, MouseEvent, useContext, useState } from 'react';
+import { omit } from 'lodash';
 import {
     Text,
     Accordion,
@@ -13,15 +14,21 @@ import {
     List,
     ListItem,
     Flex,
-    chakra
+    chakra,
+    Input,
+    InputGroup,
+    InputRightElement
 } from '@chakra-ui/react';
-import { VscChevronRight, VscChevronDown, VscAdd, VscEdit, VscTrash } from 'react-icons/vsc';
-import Context from './context';
+import { VscChevronRight, VscChevronDown, VscAdd, VscEdit, VscTrash, VscClose, VscCheck } from 'react-icons/vsc';
 import { GlobalSnippetsInfo, WorkspaceSnippetsInfo } from '../type';
+import Context from './context';
+import lang from './lang';
 
 const AddIcon = chakra(VscAdd);
 const EditIcon = chakra(VscEdit);
 const TrashIcon = chakra(VscTrash);
+const CloseIcon = chakra(VscClose);
+const CheckIcon = chakra(VscCheck);
 
 function View() {
     const context = useContext(Context);
@@ -42,7 +49,7 @@ function View() {
                         color: 'var(--vscode-list-highlightForeground)',
                         borderBottomColor: 'var(--vscode-list-highlightForeground)'
                     }}>
-                    Global
+                    {lang.Global()}
                 </Tab>
                 <Tab
                     textStyle="vscode"
@@ -54,7 +61,7 @@ function View() {
                         color: 'var(--vscode-list-highlightForeground)',
                         borderBottomColor: 'var(--vscode-list-highlightForeground)'
                     }}>
-                    Project
+                    {lang.Project()}
                 </Tab>
             </TabList>
             <TabPanels>
@@ -81,6 +88,8 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const [expandedIndex, setExpandedIndex] = useState<number[]>([]);
     const [hoveredItemIndex, setHoveredItemIndex] = useState(-1);
     const [hoveredPanelIndex, setHoveredPanelIndex] = useState(-1);
+    const [editingKey, setEditingKey] = useState('');
+    const [newFilename, setNewFilename] = useState('');
 
     const handleExpandedIndexChange = (index: number[]) => {
         setExpandedIndex(index);
@@ -98,6 +107,60 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const handleDeleteSnippetFile = (file: string) => {
         vscode?.postMessage({ type: 'deleteSnippetFile', data: file });
     };
+    const handleEditName = (key: string, e: MouseEvent) => {
+        e.stopPropagation();
+        setEditingKey(key);
+    };
+    const resetRenameStatus = () => {
+        setEditingKey('');
+        setNewFilename('');
+    };
+    const handleRenameInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setNewFilename(e.target.value);
+    };
+    const handleRenameSnippetFile = (fsPath: string, extname: string) => {
+        const splits = fsPath.split('/');
+        const length = splits.length;
+        const newPath = splits
+            .reduce((res, item, index) => {
+                if (index >= length - 1) {
+                    res.push(`${newFilename}${extname}`);
+
+                    return res;
+                }
+
+                res.push(item);
+                return res;
+            }, [] as string[])
+            .join('/');
+
+        vscode?.postMessage({ type: 'renameSnippetFile', data: { oldPath: fsPath, newPath } });
+        resetRenameStatus();
+    };
+    const handleRenamePress = (fsPath: string, extname: string, e: KeyboardEvent<HTMLInputElement>) => {
+        if ((e.charCode || e.keyCode) === 13 || (e as any).code === 'Enter') {
+            handleRenameSnippetFile(fsPath, extname);
+        }
+    };
+    const handleRenameKeyUp = (e: KeyboardEvent<HTMLInputElement>) => {
+        if ((e.charCode || e.keyCode) === 27 || (e as any).code === 'Escape') {
+            resetRenameStatus();
+        }
+    };
+    const handleCancelRenameSnippetFile = () => {
+        resetRenameStatus();
+    };
+    const handleDeleteSnippet = (fsPath: string, snippetName: string) => {
+        if (!snippetsInfo[fsPath].snippets[snippetName]) {
+            return;
+        }
+
+        const snippets = omit(snippetsInfo[fsPath].snippets, snippetName);
+        vscode?.postMessage({
+            type: 'deleteSnippet',
+            data: { type: type === 'global' ? type : 'workspace', fsPath, snippets }
+        });
+    };
 
     return (
         <Accordion
@@ -111,14 +174,45 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                         <AccordionButton cursor="default">
                             {expandedIndex.includes(index) ? <VscChevronDown /> : <VscChevronRight />}
                             <Flex flex="1" alignItems="center" justifyContent="space-between" pl="4">
-                                <Text flex="1" isTruncated title={infoItem.name} textAlign="left">
-                                    {type === 'project'
-                                        ? `${infoItem.project.toUpperCase()}: ${infoItem.name}`
-                                        : infoItem.name}
-                                </Text>
-                                {hoveredItemIndex === index && (
+                                {editingKey === filePath ? (
+                                    <InputGroup size="xs" onClick={(e) => e.stopPropagation()}>
+                                        <Input
+                                            pr="32px"
+                                            variant="flushed"
+                                            placeholder={infoItem.name}
+                                            autoFocus
+                                            onChange={handleRenameInputChange}
+                                            onKeyPress={handleRenamePress.bind(null, filePath, infoItem.extname)}
+                                            onKeyUp={handleRenameKeyUp}
+                                        />
+                                        <InputRightElement width="32px">
+                                            <CheckIcon
+                                                size="24px"
+                                                cursor="pointer"
+                                                mr="4"
+                                                onClick={() => handleRenameSnippetFile(filePath, infoItem.extname)}
+                                            />
+                                            <CloseIcon
+                                                size="24px"
+                                                cursor="pointer"
+                                                onClick={handleCancelRenameSnippetFile}
+                                            />
+                                        </InputRightElement>
+                                    </InputGroup>
+                                ) : (
+                                    <Text flex="1" isTruncated title={infoItem.name} textAlign="left">
+                                        {type === 'project'
+                                            ? `${infoItem.project.toUpperCase()}: ${infoItem.name}`
+                                            : infoItem.name}
+                                    </Text>
+                                )}
+                                {hoveredItemIndex === index && editingKey !== filePath && (
                                     <Flex>
-                                        <EditIcon cursor="pointer" mr="4" />
+                                        <EditIcon
+                                            cursor="pointer"
+                                            mr="4"
+                                            onClick={handleEditName.bind(null, filePath)}
+                                        />
                                         <TrashIcon cursor="pointer" onClick={() => handleDeleteSnippetFile(filePath)} />
                                     </Flex>
                                 )}
@@ -141,7 +235,10 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                                 <Flex>
                                                     <AddIcon cursor="pointer" mr="4" />
                                                     <EditIcon cursor="pointer" mr="4" />
-                                                    <TrashIcon cursor="pointer" />
+                                                    <TrashIcon
+                                                        cursor="pointer"
+                                                        onClick={() => handleDeleteSnippet(filePath, snippetName)}
+                                                    />
                                                 </Flex>
                                             )}
                                         </Flex>

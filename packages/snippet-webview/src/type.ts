@@ -26,8 +26,13 @@ interface ISnippet {
 export type GlobalSnippetsInfo = Record<string, IGlobalSnippetsInfoItem>;
 export type WorkspaceSnippetsInfo = Record<string, IWorkspaceSnippetsInfoItem>;
 
-export interface IVscode {
+export interface IVscode<T> {
     getState(): any;
     setState(state: any): void;
-    postMessage(msg: any): void;
+    postMessage(msg: IMessage<T>): void;
+}
+
+export interface IMessage<T> {
+    type: T;
+    data?: any;
 }

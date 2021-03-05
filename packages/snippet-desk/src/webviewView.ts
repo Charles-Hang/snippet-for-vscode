@@ -3,7 +3,9 @@ import { getNonce, getWebviewOptions } from './utils';
 import { generateWorkspaceSnippetsInfo, globalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
 import { IMessage } from './type';
 
-type Message = IMessage<'updateSnippetsInfo'>;
+// 需与webview保持同步
+type Message = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage'>;
+type ReceivedMessage = IMessage<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet'>;
 
 export let currentViewProvider: SnippetDeskViewProvider | undefined;
 
@@ -35,13 +37,22 @@ export class SnippetDeskViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.options = getWebviewOptions(this._extensionUri, 'source');
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-        webviewView.webview.onDidReceiveMessage((message) => {
+        webviewView.webview.onDidReceiveMessage((message: ReceivedMessage) => {
             switch (message.type) {
-                case 'didMount':
+                case 'prepareToInit':
+                    this.postMessage({ type: 'changeLanguage', data: vscode.env.language });
                     this.updateSnippetsInfo();
+                    this.postMessage({ type: 'completeInit' });
                     break;
                 case 'deleteSnippetFile':
                     vscode.commands.executeCommand('snippetDesk.deleteSnippetFile', message.data);
+                    break;
+                case 'renameSnippetFile':
+                    const { oldPath, newPath } = message.data || {};
+                    vscode.commands.executeCommand('snippetDesk.renameSnippetFile', oldPath, newPath);
+                    break;
+                case 'deleteSnippet':
+                    vscode.commands.executeCommand('snippetDesk.deleteSnippet', { ...message.data });
                     break;
             }
         });

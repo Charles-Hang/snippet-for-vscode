@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
 import * as minimist from 'minimist';
+import lang from './lang';
 
 const args = parseCLIArgs();
 const userDataPath = getUserDataPath(args);
@@ -81,7 +82,7 @@ function getDefaultUserDataPath() {
 }
 
 export async function showConfirmModal(title: string) {
-    const res = await vscode.window.showInformationMessage(title, { modal: true }, 'confirm');
+    const res = await vscode.window.showInformationMessage(title, { modal: true }, lang.confirm());
 
-    return res === 'confirm';
+    return res === lang.confirm();
 }
