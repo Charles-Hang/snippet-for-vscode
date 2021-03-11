@@ -1,4 +1,5 @@
-import React, { useContext, useState, ChangeEvent, MouseEvent, KeyboardEvent } from 'react';
+import React, { useState, ChangeEvent, MouseEvent, KeyboardEvent } from 'react';
+import { omit } from 'lodash';
 import {
     Text,
     Accordion,
@@ -19,14 +20,16 @@ import {
     InputRightElement
 } from '@chakra-ui/react';
 import { VscChevronRight, VscChevronDown } from 'react-icons/vsc';
-import { GlobalSnippetsInfo, WorkspaceSnippetsInfo } from '../type';
-import Context from './context';
-import lang from './lang';
+import { GlobalSnippetsInfo, WorkspaceSnippetsInfo } from '../../type';
+import { useDeskContext } from '../context';
+import lang from '../lang';
 
-function Desk() {
-    const context = useContext(Context);
+function DeskList() {
+    const context = useDeskContext();
     const {
-        snippetsInfo: { globalSnippetsInfo, workspaceSnippetsInfo }
+        state: {
+            snippetsInfo: { globalSnippetsInfo, workspaceSnippetsInfo }
+        }
     } = context;
 
     return (
@@ -78,8 +81,10 @@ interface IPanelProps<T extends 'global' | 'project'> {
 
 function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const { type, snippetsInfo } = props;
-    const context = useContext(Context);
-    const { vscode } = context;
+    const context = useDeskContext();
+    const {
+        state: { vscode }
+    } = context;
     const [expandedIndex, setExpandedIndex] = useState<number[]>([]);
     const [hoveredItemIndex, setHoveredItemIndex] = useState(-1);
     const [hoveredPanelIndex, setHoveredPanelIndex] = useState(-1);
@@ -144,6 +149,17 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     };
     const handleCancelRenameSnippetFile = () => {
         resetRenameStatus();
+    };
+    const handleDeleteSnippet = (fsPath: string, snippetName: string) => {
+        if (!snippetsInfo[fsPath].snippets[snippetName]) {
+            return;
+        }
+
+        const snippets = omit(snippetsInfo[fsPath].snippets, snippetName);
+        vscode?.postMessage({
+            type: 'deleteSnippet',
+            data: { type: type === 'global' ? type : 'workspace', fsPath, snippets }
+        });
     };
 
     return (
@@ -216,12 +232,13 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                             {hoveredItemIndex === index && hoveredPanelIndex === panelIndex && (
                                                 <Flex>
                                                     <Button mr="8" variant="primary">
-                                                        {lang.Insert()}
-                                                    </Button>
-                                                    <Button mr="8" variant="primary">
                                                         {lang.Edit()}
                                                     </Button>
-                                                    <Button variant="error">{lang.Delete()}</Button>
+                                                    <Button
+                                                        variant="error"
+                                                        onClick={() => handleDeleteSnippet(filePath, snippetName)}>
+                                                        {lang.Delete()}
+                                                    </Button>
                                                 </Flex>
                                             )}
                                         </Flex>
@@ -236,4 +253,4 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     );
 }
 
-export default Desk;
+export default DeskList;

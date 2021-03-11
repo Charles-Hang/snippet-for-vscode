@@ -1,24 +1,21 @@
-import React, { useEffect, useState, useRef } from 'react';
-import Context, { defaultSnippetsInfo, defaultContextValue } from './context';
-import { ISnippetsInfo, IMessage } from '../type';
+import React, { useEffect, useState } from 'react';
+import Context, { useStore } from './context';
+import { IMessage } from '../type';
 import View from './View';
 import { reCreateLang } from './lang';
 
 type ReceivedMessage = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage'>;
 
 function App() {
-    const isMountedRef = useRef(false);
     const [initFinished, setInitFinished] = useState(false);
-    const [snippetsInfo, setSnippetsInfo] = useState<ISnippetsInfo>(defaultSnippetsInfo);
-    const [contextValue, setContextValue] = useState(defaultContextValue);
+    const store = useStore();
+    const { dispatch } = store;
 
     useEffect(() => {
         const vscode = window.acquireVsCodeApi();
-        setContextValue((preValue) => ({
-            ...preValue,
-            vscode
-        }));
+        dispatch({ type: 'setVscode', data: vscode });
         vscode.postMessage({ type: 'prepareToInit' });
+        // eslint-disable-next-line
     }, []);
 
     useEffect(() => {
@@ -26,7 +23,7 @@ function App() {
             const message = event.data;
             switch (message.type) {
                 case 'updateSnippetsInfo':
-                    setSnippetsInfo(message.data);
+                    dispatch({ type: 'updateSnippetsInfo', data: message.data });
                     break;
                 case 'changeLanguage':
                     reCreateLang(message.data);
@@ -38,21 +35,7 @@ function App() {
                     break;
             }
         });
-    }, []);
-
-    useEffect(() => {
-        if (!isMountedRef.current) {
-            return;
-        }
-
-        setContextValue((preValue) => ({
-            ...preValue,
-            snippetsInfo
-        }));
-    }, [snippetsInfo]);
-
-    useEffect(() => {
-        isMountedRef.current = true;
+        // eslint-disable-next-line
     }, []);
 
     if (!initFinished) {
@@ -60,7 +43,7 @@ function App() {
     }
 
     return (
-        <Context.Provider value={contextValue}>
+        <Context.Provider value={store}>
             <View />
         </Context.Provider>
     );

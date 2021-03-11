@@ -1,9 +1,14 @@
-import { createContext } from 'react';
+import { createContext, Dispatch, useReducer, useContext } from 'react';
 import { ISnippetsInfo, IVscode } from '../type';
 
-type Vscode = IVscode<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet'>;
+type Vscode = IVscode<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet' | 'insertSnippet'>;
+type Action = { type: 'updateSnippetsInfo'; data: ISnippetsInfo } | { type: 'setVscode'; data: any };
+interface IContextState {
+    snippetsInfo: ISnippetsInfo;
+    vscode: Vscode | null;
+}
 
-export const defaultSnippetsInfo: ISnippetsInfo = {
+const defaultSnippetsInfo: ISnippetsInfo = {
     globalSnippetsInfo: {
         '/user/kjs/ksd': {
             name: 'test',
@@ -75,8 +80,32 @@ export const defaultSnippetsInfo: ISnippetsInfo = {
         }
     }
 };
-export const defaultContextValue = { snippetsInfo: defaultSnippetsInfo, vscode: undefined as Vscode | undefined };
+const defaultContextState: IContextState = { snippetsInfo: defaultSnippetsInfo, vscode: null };
 
-const Context = createContext(defaultContextValue);
+const Context = createContext<{ state: IContextState; dispatch: Dispatch<Action> }>({
+    state: defaultContextState,
+    dispatch: () => {}
+});
+
+const reducer = (state: IContextState, action: Action): IContextState => {
+    switch (action.type) {
+        case 'updateSnippetsInfo':
+            return { ...state, snippetsInfo: action.data };
+        case 'setVscode':
+            return { ...state, vscode: action.data };
+        default:
+            throw new Error();
+    }
+};
+
+export const useStore = () => {
+    const [state, dispatch] = useReducer(reducer, defaultContextState);
+
+    return { state, dispatch };
+};
+
+export const useDeskViewContext = () => {
+    return useContext(Context);
+};
 
 export default Context;

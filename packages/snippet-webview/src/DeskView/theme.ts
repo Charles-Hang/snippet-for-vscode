@@ -3,8 +3,10 @@ import { extendTheme } from '@chakra-ui/react';
 const theme = extendTheme({
     styles: {
         global: {
+            '*': {
+                boxShadow: 'none !important'
+            },
             '*:focus': {
-                boxShadow: 'none !important',
                 borderColor: 'var(--vscode-list-highlightForeground) !important'
             },
             '*,::before,::after': {

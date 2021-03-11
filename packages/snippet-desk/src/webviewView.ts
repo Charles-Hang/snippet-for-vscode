@@ -5,7 +5,9 @@ import { IMessage } from './type';
 
 // 需与webview保持同步
 type Message = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage'>;
-type ReceivedMessage = IMessage<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet'>;
+type ReceivedMessage = IMessage<
+    'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet' | 'insertSnippet'
+>;
 
 export let currentViewProvider: SnippetDeskViewProvider | undefined;
 
@@ -53,6 +55,10 @@ export class SnippetDeskViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'deleteSnippet':
                     vscode.commands.executeCommand('snippetDesk.deleteSnippet', { ...message.data });
+                    break;
+                case 'insertSnippet':
+                    const { fsPath, snippetName } = message.data || {};
+                    vscode.commands.executeCommand('snippetDesk.insertSnippet', fsPath, snippetName);
                     break;
             }
         });

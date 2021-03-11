@@ -211,3 +211,18 @@ export function makeDirectoryIfDontExist(path: string) {
         vscode.window.showErrorMessage(error.message);
     }
 }
+
+export function insertSnippet(fsPath: string, snippetName: string) {
+    const snippet =
+        globalSnippetsInfo[fsPath]?.snippets[snippetName] || workspaceSnippetsInfo[fsPath]?.snippets[snippetName];
+    const editor = vscode.window.activeTextEditor;
+    const body = Array.isArray(snippet?.body) ? snippet.body.join('\n') : snippet?.body;
+
+    if (!body) {
+        vscode.window.showErrorMessage(lang.invalidSnippet());
+
+        return;
+    }
+
+    editor.insertSnippet(new vscode.SnippetString(body), editor.selection.active);
+}

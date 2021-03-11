@@ -1,4 +1,4 @@
-import React, { ChangeEvent, KeyboardEvent, MouseEvent, useContext, useState } from 'react';
+import React, { ChangeEvent, KeyboardEvent, MouseEvent, useState } from 'react';
 import { omit } from 'lodash';
 import {
     Text,
@@ -19,21 +19,23 @@ import {
     InputGroup,
     InputRightElement
 } from '@chakra-ui/react';
-import { VscChevronRight, VscChevronDown, VscAdd, VscEdit, VscTrash, VscClose, VscCheck } from 'react-icons/vsc';
+import { VscChevronRight, VscChevronDown, VscEdit, VscTrash, VscClose, VscCheck, VscFileCode } from 'react-icons/vsc';
 import { GlobalSnippetsInfo, WorkspaceSnippetsInfo } from '../type';
-import Context from './context';
+import { useDeskViewContext } from './context';
 import lang from './lang';
 
-const AddIcon = chakra(VscAdd);
+const InsertIcon = chakra(VscFileCode);
 const EditIcon = chakra(VscEdit);
 const TrashIcon = chakra(VscTrash);
 const CloseIcon = chakra(VscClose);
 const CheckIcon = chakra(VscCheck);
 
 function View() {
-    const context = useContext(Context);
+    const context = useDeskViewContext();
     const {
-        snippetsInfo: { globalSnippetsInfo, workspaceSnippetsInfo }
+        state: {
+            snippetsInfo: { globalSnippetsInfo, workspaceSnippetsInfo }
+        }
     } = context;
 
     return (
@@ -83,8 +85,10 @@ interface IPanelProps<T extends 'global' | 'project'> {
 
 function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const { type, snippetsInfo } = props;
-    const context = useContext(Context);
-    const { vscode } = context;
+    const context = useDeskViewContext();
+    const {
+        state: { vscode }
+    } = context;
     const [expandedIndex, setExpandedIndex] = useState<number[]>([]);
     const [hoveredItemIndex, setHoveredItemIndex] = useState(-1);
     const [hoveredPanelIndex, setHoveredPanelIndex] = useState(-1);
@@ -149,6 +153,12 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     };
     const handleCancelRenameSnippetFile = () => {
         resetRenameStatus();
+    };
+    const handleInsert = (fsPath: string, snippetName: string) => {
+        vscode?.postMessage({
+            type: 'insertSnippet',
+            data: { fsPath, snippetName }
+        });
     };
     const handleDeleteSnippet = (fsPath: string, snippetName: string) => {
         if (!snippetsInfo[fsPath].snippets[snippetName]) {
@@ -233,7 +243,11 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                             </Text>
                                             {hoveredItemIndex === index && hoveredPanelIndex === panelIndex && (
                                                 <Flex>
-                                                    <AddIcon cursor="pointer" mr="4" />
+                                                    <InsertIcon
+                                                        cursor="pointer"
+                                                        mr="4"
+                                                        onClick={() => handleInsert(filePath, snippetName)}
+                                                    />
                                                     <EditIcon cursor="pointer" mr="4" />
                                                     <TrashIcon
                                                         cursor="pointer"

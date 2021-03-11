@@ -16,9 +16,9 @@ interface IWorkspaceSnippetsInfoItem {
     snippets: Record<string, ISnippet>;
 }
 
-interface ISnippet {
+export interface ISnippet {
     scope?: string;
-    prefix: string;
+    prefix: string | string[];
     body: string | string[];
     description?: string;
 }

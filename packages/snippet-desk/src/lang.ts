@@ -17,6 +17,10 @@ const languageMap = {
     confirm: {
         default: 'Confirm',
         'zh-cn': '确定'
+    },
+    invalidSnippet: {
+        default: 'Invalid snippet!',
+        'zh-cn': '非法的代码片段！'
     }
 };
 

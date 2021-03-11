@@ -55,6 +55,10 @@
                 {
                     "command": "snippetDesk.deleteSnippet",
                     "when": "false"
+                },
+                {
+                    "command": "snippetDesk.insertSnippet",
+                    "when": "false"
                 }
             ],
             "view/title": [
@@ -98,6 +102,11 @@
             {
                 "command": "snippetDesk.deleteSnippet",
                 "title": "Delete Snippet",
+                "category": "Snippet Desk"
+            },
+            {
+                "command": "snippetDesk.insertSnippet",
+                "title": "Insert Snippet",
                 "category": "Snippet Desk"
             }
         ]

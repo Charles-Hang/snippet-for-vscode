@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import registerPanel, { SnippetDeskPanel } from './webviewPanel';
 import registerView, { currentViewProvider } from './webviewView';
-import { generateSnippetsInfo, deleteSnippetFile, renameSnippetFile, saveSnippets } from './snippets';
+import { generateSnippetsInfo, deleteSnippetFile, renameSnippetFile, saveSnippets, insertSnippet } from './snippets';
 import { showConfirmModal } from './utils';
 import lang from './lang';
 
@@ -45,7 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
                 currentViewProvider?.updateSnippetsInfo();
                 SnippetDeskPanel.currentPanel?.updateSnippetsInfo();
             }
-        )
+        ),
+        vscode.commands.registerCommand('snippetDesk.insertSnippet', (fsPath: string, snippetName: string) => {
+            insertSnippet(fsPath, snippetName);
+        })
     );
 
     registerPanel(context);

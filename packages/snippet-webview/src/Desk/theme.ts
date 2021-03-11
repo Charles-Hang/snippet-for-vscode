@@ -3,8 +3,10 @@ import { extendTheme } from '@chakra-ui/react';
 const theme = extendTheme({
     styles: {
         global: {
+            '*': {
+                boxShadow: 'none !important'
+            },
             '*:focus': {
-                boxShadow: 'none !important',
                 borderColor: 'var(--vscode-list-highlightForeground) !important'
             },
             '*,::before,::after': {
@@ -22,7 +24,7 @@ const theme = extendTheme({
                 color: 'var(--vscode-foreground)',
                 lineHeight: 1.5
             },
-            'input:focus': {
+            'input:focus,select:focus,textarea:focus': {
                 outline: 'none'
             }
         }
@@ -68,6 +70,13 @@ const theme = extendTheme({
                 panel: {
                     padding: '0'
                 }
+            }
+        },
+        FormLabel: {
+            baseStyle: {
+                fontWeight: 'var(--vscode-editor-font-weight)',
+                fontSize: 'var(--vscode-editor-font-size)',
+                marginBottom: '8px'
             }
         }
     },
