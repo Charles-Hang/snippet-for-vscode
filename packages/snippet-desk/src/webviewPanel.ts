@@ -1,11 +1,21 @@
 import * as vscode from 'vscode';
 import { getNonce, getWebviewOptions } from './utils';
 import { IMessage } from './type';
-import { globalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
+import { generalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
+import lang from './lang';
 
 // 需与webview保持同步
-type Message = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage'>;
-type ReceivedMessage = IMessage<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet'>;
+type Message = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage' | 'editSnippet' | 'setLanguages'>;
+type ReceivedMessage = IMessage<
+    | 'prepareToInit'
+    | 'deleteSnippetFile'
+    | 'renameSnippetFile'
+    | 'deleteSnippet'
+    | 'editSnippet'
+    | 'getLanguages'
+    | 'addSnippet'
+    | 'newSnippetsFile'
+>;
 
 export default function registerPanel(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -113,6 +123,30 @@ export class SnippetDeskPanel {
                     case 'deleteSnippet':
                         vscode.commands.executeCommand('snippetDesk.deleteSnippet', { ...message.data });
                         break;
+                    case 'editSnippet':
+                        vscode.commands.executeCommand(
+                            'snippetDesk.editSnippet',
+                            { ...message.data },
+                            lang.editedSuccessfully()
+                        );
+                        break;
+                    case 'addSnippet':
+                        vscode.commands.executeCommand(
+                            'snippetDesk.editSnippet',
+                            { ...message.data },
+                            lang.addedSuccessfully()
+                        );
+                        break;
+                    case 'getLanguages':
+                        vscode.languages
+                            .getLanguages()
+                            .then((data) => this.postMessage({ type: 'setLanguages', data }));
+                        break;
+                    case 'newSnippetsFile':
+                        vscode.commands.executeCommand('snippetDesk.newSnippetsFile', message.data);
+                        break;
+                    default:
+                        break;
                 }
             },
             null,
@@ -127,7 +161,7 @@ export class SnippetDeskPanel {
     public updateSnippetsInfo() {
         this.postMessage({
             type: 'updateSnippetsInfo',
-            data: { globalSnippetsInfo, workspaceSnippetsInfo }
+            data: { generalSnippetsInfo, projectSnippetsInfo: workspaceSnippetsInfo }
         });
     }
 

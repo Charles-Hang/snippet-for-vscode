@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
 import * as minimist from 'minimist';
@@ -8,7 +9,7 @@ const args = parseCLIArgs();
 const userDataPath = getUserDataPath(args);
 const userSettingsPath = join(userDataPath, 'User');
 
-export const globalSnippetsPath = join(userSettingsPath, 'snippets');
+export const generalSnippetsPath = join(userSettingsPath, 'snippets');
 
 export function getWorkspaceSnippetsPaths() {
     return (
@@ -85,4 +86,32 @@ export async function showConfirmModal(title: string) {
     const res = await vscode.window.showInformationMessage(title, { modal: true }, lang.confirm());
 
     return res === lang.confirm();
+}
+
+export function makeDirectoryIfDontExist(path: string) {
+    return new Promise<void>((resolve, reject) => {
+        try {
+            if (existsSync(path)) {
+                resolve();
+                return;
+            }
+            mkdirSync(path);
+            resolve();
+        } catch (error) {
+            vscode.window.showErrorMessage(error.message);
+            reject();
+        }
+    });
+}
+
+export function createSnippetsFile(path: string) {
+    return new Promise<void>((resolve, reject) => {
+        try {
+            writeFileSync(path, JSON.stringify({}), 'utf-8');
+            resolve();
+        } catch (error) {
+            vscode.window.showErrorMessage(error.message);
+            reject();
+        }
+    });
 }

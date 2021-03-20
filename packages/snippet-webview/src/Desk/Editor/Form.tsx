@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { isEmpty } from 'lodash';
 import {
     Box,
     Text,
@@ -23,23 +24,33 @@ import lang from '../lang';
 
 interface IFormProps {
     setScope: boolean;
-    snippetInfo: ISnippet;
-    snippetName: string;
-    onConfirm(): void;
+    languages: string[];
+    snippetInfo?: ISnippet;
+    snippetName?: string;
+    onConfirm(name: string, info: ISnippet): void;
+    onCancel(): void;
 }
 
-// TODO: wait to get from vscode
-const languages = ['javascript', 'c++', 'php', 'go', 'typescript', 'css', 'html'];
+interface IErrors {
+    name?: string;
+    prefix?: string;
+    body?: string;
+}
 
 function Form(props: IFormProps) {
-    const { setScope, snippetInfo: defaultInfo, snippetName: defaultName, onConfirm } = props;
-    const [snippetInfo, setSnippetInfo] = useState(defaultInfo);
+    const { setScope, languages, snippetInfo: defaultInfo, snippetName: defaultName, onConfirm, onCancel } = props;
+    const [snippetInfo, setSnippetInfo] = useState<ISnippet>(defaultInfo || { prefix: '', body: '' });
     const [snippetName, setSnippetName] = useState(defaultName);
+    const [errors, setErrors] = useState<IErrors>({});
     const { scope, prefix, body, description } = snippetInfo;
     const prefixLengthRef = useRef(prefix.length);
 
     const handleNameChange = (e) => {
         setSnippetName(e.target.value);
+        setErrors((prevErrors) => ({
+            ...prevErrors,
+            name: undefined
+        }));
     };
     const handleScopeChange = (newScope) => {
         setSnippetInfo((prevInfo) => ({
@@ -60,6 +71,49 @@ function Form(props: IFormProps) {
             ...prevInfo,
             prefix: newPrefix
         }));
+        setErrors((prevErrors) => ({
+            ...prevErrors,
+            prefix: undefined
+        }));
+    };
+    const handleBodyChange = (e) => {
+        const body = e.target.value.split(/\n/);
+        setSnippetInfo((prevInfo) => ({
+            ...prevInfo,
+            body
+        }));
+        setErrors((prevErrors) => ({
+            ...prevErrors,
+            body: undefined
+        }));
+    };
+    const handleDescriptionChange = (e) => {
+        setSnippetInfo((prevInfo) => ({
+            ...prevInfo,
+            description: e.target.value
+        }));
+    };
+    const checker = () => {
+        const errors: IErrors = {};
+
+        if (!snippetName) {
+            errors.name = `${lang.Missing()} ${lang.SnippetName()}`;
+        }
+        if (!prefix) {
+            errors.prefix = `${lang.Missing()} ${lang.Prefix()}`;
+        }
+        if ((typeof body === 'string' && !body) || (typeof body === 'object' && !body?.[0])) {
+            errors.body = `${lang.Missing()} ${lang.SnippetBody()}`;
+        }
+
+        setErrors(errors);
+        return isEmpty(errors);
+    };
+    const handleConfirm = () => {
+        if (!checker()) {
+            return;
+        }
+        onConfirm(snippetName!, snippetInfo);
     };
 
     return (
@@ -88,11 +142,13 @@ function Form(props: IFormProps) {
                                     }, [] as string[])}
                                     onChange={handleScopeChange}>
                                     <HStack wrap="wrap">
-                                        {languages.map((language) => (
-                                            <Checkbox key={language} value={language}>
-                                                {language}
-                                            </Checkbox>
-                                        ))}
+                                        {languages
+                                            .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1))
+                                            .map((language) => (
+                                                <Checkbox key={language} value={language}>
+                                                    {language}
+                                                </Checkbox>
+                                            ))}
                                     </HStack>
                                 </CheckboxGroup>
                             </AccordionPanel>
@@ -112,7 +168,11 @@ function Form(props: IFormProps) {
             </FormControl>
             <FormControl mb="12" id="snippet-body" isRequired>
                 <FormLabel>{lang.SnippetBody()}</FormLabel>
-                <Textarea />
+                <Textarea
+                    value={typeof body === 'string' ? body : body.join('\n')}
+                    size="xs"
+                    onChange={handleBodyChange}
+                />
                 <FormHelperText>
                     <Link
                         href="https://code.visualstudio.com/docs/editor/userdefinedsnippets#_snippet-syntax"
@@ -123,11 +183,21 @@ function Form(props: IFormProps) {
             </FormControl>
             <FormControl mb="12" id="snippet-description">
                 <FormLabel>{lang.Description()}</FormLabel>
-                <Input variant="flushed" />
+                <Input variant="flushed" value={description} onChange={handleDescriptionChange} />
                 <FormHelperText>{lang.descriptionHelperText()}</FormHelperText>
             </FormControl>
+            {Object.entries(errors).map(([label, error]) => (
+                <Text key={label} color="var(--vscode-editorError-foreground)" display="block" mb="8">
+                    {error}
+                </Text>
+            ))}
             <Box textAlign="right">
-                <Button>{lang.Confirm()}</Button>
+                <Button onClick={onCancel} mr="8" variant="cancel">
+                    {lang.Cancel()}
+                </Button>
+                <Button onClick={handleConfirm} variant="primary">
+                    {lang.Confirm()}
+                </Button>
             </Box>
         </Box>
     );

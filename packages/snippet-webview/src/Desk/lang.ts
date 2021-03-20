@@ -1,13 +1,21 @@
 import { createLang } from '../utils';
 
 const languageMap = {
-    Global: {
-        default: 'Global',
-        'zh-cn': '全局'
+    General: {
+        default: 'General',
+        'zh-cn': '通用的'
     },
-    Project: {
-        default: 'Project',
-        'zh-cn': '项目'
+    ForProject: {
+        default: 'For Project',
+        'zh-cn': '项目的'
+    },
+    SingleLanguage: {
+        default: 'Single-language:',
+        'zh-cn': '单语言的：'
+    },
+    MultiLanguage: {
+        default: 'Multi-language(global):',
+        'zh-cn': '多语言的（全局的）：'
     },
     OK: {
         default: 'OK',
@@ -21,6 +29,14 @@ const languageMap = {
         default: 'Insert',
         'zh-cn': '插入'
     },
+    Add: {
+        default: 'Add',
+        'zh-cn': '添加'
+    },
+    Rename: {
+        default: 'Rename',
+        'zh-cn': '重命名'
+    },
     Edit: {
         default: 'Edit',
         'zh-cn': '编辑'
@@ -31,15 +47,19 @@ const languageMap = {
     },
     SnippetList: {
         default: 'Snippet List',
-        'zh-cn': '代码片段列表'
+        'zh-cn': '代码段列表'
     },
     EditSnippet: {
         default: 'Edit Snippet',
-        'zh-cn': '编辑代码片段'
+        'zh-cn': '编辑代码段'
+    },
+    AddSnippet: {
+        default: 'Add Snippet',
+        'zh-cn': '新增代码段'
     },
     SnippetName: {
         default: 'Snippet Name',
-        'zh-cn': '代码片段名字'
+        'zh-cn': '代码段名字'
     },
     Scope: {
         default: 'Scope',
@@ -47,7 +67,7 @@ const languageMap = {
     },
     scopeHelperText: {
         default: 'the languages to which snippets are scoped, available in all languages if no scope.',
-        'zh-cn': '代码片段生效的开发语言范围，如果没有范围则所有语言都生效'
+        'zh-cn': '代码段生效的开发语言范围，如果没有范围则所有语言都生效'
     },
     Prefix: {
         default: 'Prefix',
@@ -56,15 +76,15 @@ const languageMap = {
     prefixHelperText: {
         default:
             'one or more trigger words that display the snippet in IntelliSense, please separate trigger words with commas.',
-        'zh-cn': '智能提示代码片段的触发词，请用逗号分隔多个词'
+        'zh-cn': '智能提示代码段的触发词，请用逗号分隔多个词'
     },
     SnippetBody: {
         default: 'Body',
-        'zh-cn': '代码片段主体'
+        'zh-cn': '代码段主体'
     },
     SnippetSyntaxHere: {
         default: 'Snippet syntax here',
-        'zh-cn': '这是代码片段语法'
+        'zh-cn': '查看代码段语法'
     },
     Description: {
         default: 'Description',
@@ -72,11 +92,19 @@ const languageMap = {
     },
     descriptionHelperText: {
         default: 'description of the snippet displayed by IntelliSense.',
-        'zh-cn': '智能提示代码片段的描述'
+        'zh-cn': '智能提示代码段的描述'
+    },
+    Missing: {
+        default: 'Missing:',
+        'zh-cn': '缺少：'
     },
     Confirm: {
         default: 'Confirm',
         'zh-cn': '确认'
+    },
+    NewSnippetsFile: {
+        default: 'New Snippets File',
+        'zh-cn': '新建代码段文件'
     }
 };
 

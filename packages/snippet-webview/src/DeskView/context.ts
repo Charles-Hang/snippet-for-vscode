@@ -1,7 +1,15 @@
 import { createContext, Dispatch, useReducer, useContext } from 'react';
 import { ISnippetsInfo, IVscode } from '../type';
 
-type Vscode = IVscode<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet' | 'insertSnippet'>;
+type Vscode = IVscode<
+    | 'prepareToInit'
+    | 'deleteSnippetFile'
+    | 'renameSnippetFile'
+    | 'deleteSnippet'
+    | 'insertSnippet'
+    | 'editSnippet'
+    | 'newSnippetsFile'
+>;
 type Action = { type: 'updateSnippetsInfo'; data: ISnippetsInfo } | { type: 'setVscode'; data: any };
 interface IContextState {
     snippetsInfo: ISnippetsInfo;
@@ -9,7 +17,7 @@ interface IContextState {
 }
 
 const defaultSnippetsInfo: ISnippetsInfo = {
-    globalSnippetsInfo: {
+    generalSnippetsInfo: {
         '/user/kjs/ksd': {
             name: 'test',
             extname: '.json',
@@ -39,7 +47,7 @@ const defaultSnippetsInfo: ISnippetsInfo = {
             }
         }
     },
-    workspaceSnippetsInfo: {
+    projectSnippetsInfo: {
         '/user/jk/lkj': {
             project: 'platform-esop',
             name: 'testp',

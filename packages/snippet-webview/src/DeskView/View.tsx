@@ -1,7 +1,8 @@
-import React, { ChangeEvent, KeyboardEvent, MouseEvent, useState } from 'react';
+import React, { ChangeEvent, Fragment, KeyboardEvent, MouseEvent, useState } from 'react';
 import { omit } from 'lodash';
 import {
     Text,
+    Button,
     Accordion,
     AccordionButton,
     AccordionItem,
@@ -19,12 +20,22 @@ import {
     InputGroup,
     InputRightElement
 } from '@chakra-ui/react';
-import { VscChevronRight, VscChevronDown, VscEdit, VscTrash, VscClose, VscCheck, VscFileCode } from 'react-icons/vsc';
-import { GlobalSnippetsInfo, WorkspaceSnippetsInfo } from '../type';
+import {
+    VscChevronRight,
+    VscChevronDown,
+    VscEdit,
+    VscTrash,
+    VscClose,
+    VscCheck,
+    VscFileCode,
+    VscAdd
+} from 'react-icons/vsc';
+import { GeneralSnippetsInfo, ProjectSnippetsInfo } from '../type';
 import { useDeskViewContext } from './context';
 import lang from './lang';
 
 const InsertIcon = chakra(VscFileCode);
+const AddIcon = chakra(VscAdd);
 const EditIcon = chakra(VscEdit);
 const TrashIcon = chakra(VscTrash);
 const CloseIcon = chakra(VscClose);
@@ -34,7 +45,8 @@ function View() {
     const context = useDeskViewContext();
     const {
         state: {
-            snippetsInfo: { globalSnippetsInfo, workspaceSnippetsInfo }
+            snippetsInfo: { generalSnippetsInfo, projectSnippetsInfo },
+            vscode
         }
     } = context;
 
@@ -51,7 +63,7 @@ function View() {
                         color: 'var(--vscode-list-highlightForeground)',
                         borderBottomColor: 'var(--vscode-list-highlightForeground)'
                     }}>
-                    {lang.Global()}
+                    {lang.General()}
                 </Tab>
                 <Tab
                     textStyle="vscode"
@@ -63,27 +75,39 @@ function View() {
                         color: 'var(--vscode-list-highlightForeground)',
                         borderBottomColor: 'var(--vscode-list-highlightForeground)'
                     }}>
-                    {lang.Project()}
+                    {lang.ForProject()}
                 </Tab>
             </TabList>
             <TabPanels>
                 <TabPanel>
-                    <Panel type="global" snippetsInfo={globalSnippetsInfo} />
+                    <Panel type="general" snippetsInfo={generalSnippetsInfo} />
+                    <Button
+                        variant="primary"
+                        mt="24"
+                        onClick={() => vscode?.postMessage({ type: 'newSnippetsFile', data: 'general' })}>
+                        {lang.NewSnippetsFile()}
+                    </Button>
                 </TabPanel>
                 <TabPanel>
-                    <Panel type="project" snippetsInfo={workspaceSnippetsInfo} />
+                    <Panel type="project" snippetsInfo={projectSnippetsInfo} />
+                    <Button
+                        variant="primary"
+                        mt="24"
+                        onClick={() => vscode?.postMessage({ type: 'newSnippetsFile', data: 'project' })}>
+                        {lang.NewSnippetsFile()}
+                    </Button>
                 </TabPanel>
             </TabPanels>
         </Tabs>
     );
 }
 
-interface IPanelProps<T extends 'global' | 'project'> {
+interface IPanelProps<T extends 'general' | 'project'> {
     type: T;
-    snippetsInfo: T extends 'global' ? GlobalSnippetsInfo : WorkspaceSnippetsInfo;
+    snippetsInfo: T extends 'general' ? GeneralSnippetsInfo : ProjectSnippetsInfo;
 }
 
-function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
+function Panel<T extends 'general' | 'project'>(props: IPanelProps<T>) {
     const { type, snippetsInfo } = props;
     const context = useDeskViewContext();
     const {
@@ -94,6 +118,15 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
     const [hoveredPanelIndex, setHoveredPanelIndex] = useState(-1);
     const [editingKey, setEditingKey] = useState('');
     const [newFilename, setNewFilename] = useState('');
+    const sortedSnippetsInfo = Object.entries(snippetsInfo as ProjectSnippetsInfo & GeneralSnippetsInfo).sort(
+        ([, prevItem], [, nextItem]) => {
+            if (nextItem.extname === '.json') {
+                return 1;
+            }
+
+            return -1;
+        }
+    );
 
     const handleExpandedIndexChange = (index: number[]) => {
         setExpandedIndex(index);
@@ -160,6 +193,12 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
             data: { fsPath, snippetName }
         });
     };
+    const handleEditSnippet = (fsPath: string, snippetName?: string) => {
+        vscode?.postMessage({
+            type: 'editSnippet',
+            data: { fsPath, snippetName }
+        });
+    };
     const handleDeleteSnippet = (fsPath: string, snippetName: string) => {
         if (!snippetsInfo[fsPath].snippets[snippetName]) {
             return;
@@ -168,7 +207,7 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
         const snippets = omit(snippetsInfo[fsPath].snippets, snippetName);
         vscode?.postMessage({
             type: 'deleteSnippet',
-            data: { type: type === 'global' ? type : 'workspace', fsPath, snippets }
+            data: { type: type === 'general' ? type : 'workspace', fsPath, snippets }
         });
     };
 
@@ -178,8 +217,12 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
             allowToggle
             onChange={handleExpandedIndexChange as any}
             onMouseLeave={handleClearHoverIndex}>
-            {Object.entries(snippetsInfo as GlobalSnippetsInfo & WorkspaceSnippetsInfo).map(
-                ([filePath, infoItem], index) => (
+            {sortedSnippetsInfo.map(([filePath, infoItem], index) => (
+                <Fragment>
+                    {index === 0 && infoItem.extname === '.json' && <Text>{lang.SingleLanguage()}</Text>}
+                    {index !== 0 &&
+                        sortedSnippetsInfo[index - 1][1].extname === '.json' &&
+                        infoItem.extname === '.code-snippets' && <Text>{lang.MultiLanguage()}</Text>}
                     <AccordionItem key={filePath} border="none" onMouseOver={() => handleHoveredItemIndexChange(index)}>
                         <AccordionButton cursor="default">
                             {expandedIndex.includes(index) ? <VscChevronDown /> : <VscChevronRight />}
@@ -218,11 +261,14 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                 )}
                                 {hoveredItemIndex === index && editingKey !== filePath && (
                                     <Flex>
-                                        <EditIcon
-                                            cursor="pointer"
-                                            mr="4"
-                                            onClick={handleEditName.bind(null, filePath)}
-                                        />
+                                        <AddIcon cursor="pointer" mr="4" onClick={() => handleEditSnippet(filePath)} />
+                                        {infoItem.extname === '.code-snippets' && (
+                                            <EditIcon
+                                                cursor="pointer"
+                                                mr="4"
+                                                onClick={handleEditName.bind(null, filePath)}
+                                            />
+                                        )}
                                         <TrashIcon cursor="pointer" onClick={() => handleDeleteSnippetFile(filePath)} />
                                     </Flex>
                                 )}
@@ -248,7 +294,11 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                                                         mr="4"
                                                         onClick={() => handleInsert(filePath, snippetName)}
                                                     />
-                                                    <EditIcon cursor="pointer" mr="4" />
+                                                    <EditIcon
+                                                        cursor="pointer"
+                                                        mr="4"
+                                                        onClick={() => handleEditSnippet(filePath, snippetName)}
+                                                    />
                                                     <TrashIcon
                                                         cursor="pointer"
                                                         onClick={() => handleDeleteSnippet(filePath, snippetName)}
@@ -261,8 +311,8 @@ function Panel<T extends 'global' | 'project'>(props: IPanelProps<T>) {
                             </List>
                         </AccordionPanel>
                     </AccordionItem>
-                )
-            )}
+                </Fragment>
+            ))}
         </Accordion>
     );
 }

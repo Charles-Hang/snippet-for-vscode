@@ -1,13 +1,25 @@
 import { createLang } from '../utils';
 
 const languageMap = {
-    Global: {
-        default: 'Global',
-        'zh-cn': '全局'
+    General: {
+        default: 'General',
+        'zh-cn': '通用的'
     },
-    Project: {
-        default: 'Project',
-        'zh-cn': '项目'
+    ForProject: {
+        default: 'For Project',
+        'zh-cn': '项目的'
+    },
+    SingleLanguage: {
+        defualt: 'Single-language:',
+        'zh-cn': '单语言的：'
+    },
+    MultiLanguage: {
+        default: 'Multi-language(global):',
+        'zh-cn': '多语言的（全局的）：'
+    },
+    NewSnippetsFile: {
+        default: 'New Snippets File',
+        'zh-cn': '新建代码段文件'
     }
 };
 

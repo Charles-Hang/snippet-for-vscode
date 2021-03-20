@@ -1,12 +1,19 @@
 import * as vscode from 'vscode';
+import { SnippetDeskPanel } from './webviewPanel';
 import { getNonce, getWebviewOptions } from './utils';
-import { generateWorkspaceSnippetsInfo, globalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
+import { generateWorkspaceSnippetsInfo, generalSnippetsInfo, workspaceSnippetsInfo } from './snippets';
 import { IMessage } from './type';
 
 // 需与webview保持同步
 type Message = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage'>;
 type ReceivedMessage = IMessage<
-    'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet' | 'insertSnippet'
+    | 'prepareToInit'
+    | 'deleteSnippetFile'
+    | 'renameSnippetFile'
+    | 'deleteSnippet'
+    | 'insertSnippet'
+    | 'editSnippet'
+    | 'newSnippetsFile'
 >;
 
 export let currentViewProvider: SnippetDeskViewProvider | undefined;
@@ -60,6 +67,19 @@ export class SnippetDeskViewProvider implements vscode.WebviewViewProvider {
                     const { fsPath, snippetName } = message.data || {};
                     vscode.commands.executeCommand('snippetDesk.insertSnippet', fsPath, snippetName);
                     break;
+                case 'editSnippet':
+                    if (SnippetDeskPanel.currentPanel) {
+                        SnippetDeskPanel.currentPanel.postMessage({ type: 'editSnippet', data: message.data });
+                    } else {
+                        SnippetDeskPanel.initQueue.push({ type: 'editSnippet', data: message.data });
+                        vscode.commands.executeCommand('snippetDesk.open');
+                    }
+                    break;
+                case 'newSnippetsFile':
+                    vscode.commands.executeCommand('snippetDesk.newSnippetsFile', message.data);
+                    break;
+                default:
+                    break;
             }
         });
     }
@@ -76,7 +96,7 @@ export class SnippetDeskViewProvider implements vscode.WebviewViewProvider {
     public updateSnippetsInfo() {
         this.postMessage({
             type: 'updateSnippetsInfo',
-            data: { globalSnippetsInfo, workspaceSnippetsInfo }
+            data: { generalSnippetsInfo, projectSnippetsInfo: workspaceSnippetsInfo }
         });
     }
 

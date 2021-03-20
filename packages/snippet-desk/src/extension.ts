@@ -1,7 +1,14 @@
 import * as vscode from 'vscode';
 import registerPanel, { SnippetDeskPanel } from './webviewPanel';
 import registerView, { currentViewProvider } from './webviewView';
-import { generateSnippetsInfo, deleteSnippetFile, renameSnippetFile, saveSnippets, insertSnippet } from './snippets';
+import {
+    generateSnippetsInfo,
+    deleteSnippetFile,
+    renameSnippetFile,
+    saveSnippets,
+    insertSnippet,
+    newSnippetsFile
+} from './snippets';
 import { showConfirmModal } from './utils';
 import lang from './lang';
 
@@ -9,12 +16,15 @@ import lang from './lang';
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     generateSnippetsInfo();
+    function updateSnippetsInfo() {
+        currentViewProvider?.updateSnippetsInfo();
+        SnippetDeskPanel.currentPanel?.updateSnippetsInfo();
+    }
 
     context.subscriptions.push(
         vscode.commands.registerCommand('snippetDesk.refreshSnippets', () => {
             generateSnippetsInfo();
-            currentViewProvider?.updateSnippetsInfo();
-            SnippetDeskPanel.currentPanel?.updateSnippetsInfo();
+            updateSnippetsInfo();
         }),
         vscode.commands.registerCommand('snippetDesk.deleteSnippetFile', async (fsPath: string) => {
             const isConfirmed = await showConfirmModal(lang.confirmToDeleteSnippetFile());
@@ -23,14 +33,12 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            await deleteSnippetFile(fsPath);
-            currentViewProvider?.updateSnippetsInfo();
-            SnippetDeskPanel.currentPanel?.updateSnippetsInfo();
+            await deleteSnippetFile(fsPath).catch(() => {});
+            updateSnippetsInfo();
         }),
         vscode.commands.registerCommand('snippetDesk.renameSnippetFile', async (oldPath: string, newPath: string) => {
-            await renameSnippetFile(oldPath, newPath);
-            currentViewProvider?.updateSnippetsInfo();
-            SnippetDeskPanel.currentPanel?.updateSnippetsInfo();
+            await renameSnippetFile(oldPath, newPath).catch(() => {});
+            updateSnippetsInfo();
         }),
         vscode.commands.registerCommand(
             'snippetDesk.deleteSnippet',
@@ -41,14 +49,28 @@ export function activate(context: vscode.ExtensionContext) {
                     return;
                 }
 
-                await saveSnippets(...params);
-                currentViewProvider?.updateSnippetsInfo();
-                SnippetDeskPanel.currentPanel?.updateSnippetsInfo();
+                await saveSnippets(...params).catch(() => {});
+                updateSnippetsInfo();
             }
         ),
         vscode.commands.registerCommand('snippetDesk.insertSnippet', (fsPath: string, snippetName: string) => {
             insertSnippet(fsPath, snippetName);
-        })
+        }),
+        vscode.commands.registerCommand(
+            'snippetDesk.editSnippet',
+            async (data: Parameters<typeof saveSnippets>[0], message: string) => {
+                await saveSnippets(data).catch(() => {});
+                vscode.window.showInformationMessage(message);
+                updateSnippetsInfo();
+            }
+        ),
+        vscode.commands.registerCommand(
+            'snippetDesk.newSnippetsFile',
+            async (param: Parameters<typeof newSnippetsFile>[0]) => {
+                await newSnippetsFile(param).catch(() => {});
+                vscode.commands.executeCommand('snippetDesk.refreshSnippets');
+            }
+        )
     );
 
     registerPanel(context);

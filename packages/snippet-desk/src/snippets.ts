@@ -1,12 +1,12 @@
 import { join, extname, basename } from 'path';
-import { readdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, mkdirSync, existsSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, existsSync } from 'fs';
 import * as vscode from 'vscode';
-import { globalSnippetsPath, getWorkspaceSnippetsPaths } from './utils';
+import { generalSnippetsPath, getWorkspaceSnippetsPaths, createSnippetsFile, makeDirectoryIfDontExist } from './utils';
 import lang from './lang';
 
 type Snippets = Record<any, any>;
 
-interface IGlobalSnippetsInfoItem {
+interface IGeneralSnippetsInfoItem {
     name: string;
     extname: string;
     snippets: Snippets;
@@ -19,15 +19,15 @@ interface IWorkspaceSnippetsInfoItem {
     snippets: Snippets;
 }
 
-type GlobalSnippetsInfo = Record<string, IGlobalSnippetsInfoItem>;
+type GeneralSnippetsInfo = Record<string, IGeneralSnippetsInfoItem>;
 type WorkspaceSnippetsInfo = Record<string, IWorkspaceSnippetsInfoItem>;
 
-export let globalSnippetsInfo: GlobalSnippetsInfo = {};
+export let generalSnippetsInfo: GeneralSnippetsInfo = {};
 export let workspaceSnippetsInfo: WorkspaceSnippetsInfo = {};
 
-function getGlobalSnippetsFiles() {
+function getGeneralSnippetsFiles() {
     try {
-        return readdirSync(globalSnippetsPath).map((filename) => join(globalSnippetsPath, filename));
+        return readdirSync(generalSnippetsPath).map((filename) => join(generalSnippetsPath, filename));
     } catch (error) {
         return [];
     }
@@ -47,15 +47,15 @@ function getWorkspaceSnippetFiles() {
     }, [] as string[]);
 }
 
-function generateGlobalSnippetsInfo() {
-    globalSnippetsInfo = {};
-    getGlobalSnippetsFiles().forEach((fsPath) => {
+function generateGeneralSnippetsInfo() {
+    generalSnippetsInfo = {};
+    getGeneralSnippetsFiles().forEach((fsPath) => {
         try {
             const text = readFileSync(fsPath, 'utf-8');
             const data = new Function('return ' + text)();
             const ext = extname(fsPath);
 
-            globalSnippetsInfo[fsPath] = {
+            generalSnippetsInfo[fsPath] = {
                 name: basename(fsPath, ext),
                 extname: ext,
                 snippets: data
@@ -88,7 +88,7 @@ export function generateWorkspaceSnippetsInfo() {
 }
 
 export function generateSnippetsInfo() {
-    generateGlobalSnippetsInfo();
+    generateGeneralSnippetsInfo();
     generateWorkspaceSnippetsInfo();
 }
 
@@ -97,17 +97,17 @@ export function saveSnippets({
     fsPath,
     snippets
 }: {
-    type: 'global' | 'workspace';
+    type: 'general' | 'workspace';
     fsPath: string;
     snippets: Snippets;
 }) {
     return new Promise<void>((resolve, reject) => {
         try {
             writeFileSync(fsPath, JSON.stringify(snippets, undefined, 4), 'utf-8');
-            if (type === 'global') {
+            if (type === 'general') {
                 const ext = extname(fsPath);
 
-                globalSnippetsInfo[fsPath] = {
+                generalSnippetsInfo[fsPath] = {
                     name: basename(fsPath, ext),
                     extname: ext,
                     snippets
@@ -137,7 +137,7 @@ export function renameSnippetFile(oldPath: string, newPath: string) {
     return new Promise<void>((resolve, reject) => {
         try {
             if (
-                (globalSnippetsInfo[oldPath] && globalSnippetsInfo[newPath]) ||
+                (generalSnippetsInfo[oldPath] && generalSnippetsInfo[newPath]) ||
                 (workspaceSnippetsInfo[oldPath] && workspaceSnippetsInfo[newPath])
             ) {
                 vscode.window.showErrorMessage(lang.newFilenameExists());
@@ -145,15 +145,15 @@ export function renameSnippetFile(oldPath: string, newPath: string) {
                 return;
             }
             renameSync(oldPath, newPath);
-            if (globalSnippetsInfo[oldPath]) {
+            if (generalSnippetsInfo[oldPath]) {
                 const ext = extname(newPath);
 
-                globalSnippetsInfo[newPath] = {
+                generalSnippetsInfo[newPath] = {
                     name: basename(newPath, ext),
                     extname: ext,
-                    snippets: globalSnippetsInfo[oldPath].snippets
+                    snippets: generalSnippetsInfo[oldPath].snippets
                 };
-                delete globalSnippetsInfo[oldPath];
+                delete generalSnippetsInfo[oldPath];
             }
             if (workspaceSnippetsInfo[oldPath]) {
                 const project = newPath.split('/').slice(-3, -2)[0];
@@ -179,8 +179,8 @@ export function deleteSnippetFile(fsPath: string) {
     return new Promise<void>((resolve, reject) => {
         try {
             unlinkSync(fsPath);
-            if (globalSnippetsInfo[fsPath]) {
-                delete globalSnippetsInfo[fsPath];
+            if (generalSnippetsInfo[fsPath]) {
+                delete generalSnippetsInfo[fsPath];
             }
             if (workspaceSnippetsInfo[fsPath]) {
                 delete workspaceSnippetsInfo[fsPath];
@@ -193,30 +193,15 @@ export function deleteSnippetFile(fsPath: string) {
     });
 }
 
-function makeDirectory(path: string) {
-    try {
-        mkdirSync(path);
-    } catch (error) {
-        vscode.window.showErrorMessage(error.message);
-    }
-}
-
-export function makeDirectoryIfDontExist(path: string) {
-    try {
-        if (existsSync(path)) {
-            return;
-        }
-        makeDirectory(path);
-    } catch (error) {
-        vscode.window.showErrorMessage(error.message);
-    }
-}
-
 export function insertSnippet(fsPath: string, snippetName: string) {
     const snippet =
-        globalSnippetsInfo[fsPath]?.snippets[snippetName] || workspaceSnippetsInfo[fsPath]?.snippets[snippetName];
+        generalSnippetsInfo[fsPath]?.snippets[snippetName] || workspaceSnippetsInfo[fsPath]?.snippets[snippetName];
     const editor = vscode.window.activeTextEditor;
     const body = Array.isArray(snippet?.body) ? snippet.body.join('\n') : snippet?.body;
+
+    if (!editor) {
+        return;
+    }
 
     if (!body) {
         vscode.window.showErrorMessage(lang.invalidSnippet());
@@ -225,4 +210,88 @@ export function insertSnippet(fsPath: string, snippetName: string) {
     }
 
     editor.insertSnippet(new vscode.SnippetString(body), editor.selection.active);
+}
+
+async function newSingleSnippetsFile() {
+    const languages = await vscode.languages.getLanguages();
+    const currentLanguage = vscode.window.activeTextEditor?.document.languageId;
+    const items = languages
+        .map((language) => ({
+            label: language,
+            description: language === currentLanguage ? lang.currentLanguage() : undefined
+        }))
+        .sort((a, b) => {
+            if (a.description) return -1;
+            if (b.description) return 1;
+            return a.label.toLowerCase() > b.label.toLowerCase() ? 1 : -1;
+        });
+    const seleted = await vscode.window.showQuickPick(items, { placeHolder: currentLanguage });
+    if (!seleted) {
+        return Promise.reject();
+    }
+    const path = join(generalSnippetsPath, `${seleted.label}.json`);
+    if (existsSync(path)) {
+        vscode.window.showInformationMessage(lang.AlreadyExists(), { modal: true }, lang.OK());
+        return Promise.reject();
+    }
+    return createSnippetsFile(path);
+}
+
+async function newGlobalSnippetsFile(dirPath: string) {
+    const name = await vscode.window.showInputBox({ placeHolder: lang.TypeSnippetFileName() });
+    if (!name) {
+        return Promise.reject();
+    }
+    const path = join(dirPath, `${name}.code-snippets`);
+    if (existsSync(path)) {
+        vscode.window.showInformationMessage(lang.AlreadyExists(), { modal: true }, lang.OK());
+        return Promise.reject();
+    }
+    return createSnippetsFile(path);
+}
+
+async function newProjectSnippetsFile() {
+    let projectPath: string | undefined;
+    const folders = vscode.workspace.workspaceFolders;
+    console.log('folders', folders);
+    if (!folders || !folders.length) {
+        vscode.window.showInformationMessage(lang.OpenFolderFirst(), { modal: true }, lang.OK());
+        return Promise.reject();
+    }
+    if (folders.length > 1) {
+        projectPath = await vscode.window
+            .showQuickPick(folders.map((folder) => ({ label: folder.name, path: folder.uri.fsPath })))
+            .then((item) => item?.path);
+        if (!projectPath) {
+            return Promise.reject();
+        }
+    } else {
+        projectPath = folders[0].uri.fsPath;
+    }
+    const snippetsPath = join(projectPath, '.vscode');
+    await makeDirectoryIfDontExist(snippetsPath);
+    return newGlobalSnippetsFile(snippetsPath);
+}
+
+export async function newSnippetsFile(type: 'general' | 'project') {
+    if (type === 'general') {
+        const generalType = await vscode.window.showQuickPick(
+            [
+                { label: lang.NewSingleLanguageSnippetsFile(), value: 'single' },
+                { label: lang.NewGlobalSnippetsFile(), value: 'global' }
+            ],
+            { placeHolder: lang.SelectType() }
+        );
+        if (generalType?.value === 'single') {
+            return newSingleSnippetsFile();
+        }
+        if (generalType?.value === 'global') {
+            return newGlobalSnippetsFile(generalSnippetsPath);
+        }
+        return Promise.reject();
+    }
+    if (type === 'project') {
+        return newProjectSnippetsFile();
+    }
+    return Promise.reject();
 }

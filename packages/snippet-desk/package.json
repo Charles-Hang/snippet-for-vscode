@@ -1,14 +1,13 @@
 {
     "name": "snippet-desk",
     "displayName": "snippet desk",
-    "description": "create your own snippets in a easy way",
+    "description": "create and manage your own snippets in a easy way",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.52.0"
     },
     "categories": [
         "Snippets",
-        "Visualization",
         "Other"
     ],
     "activationEvents": [
@@ -59,6 +58,14 @@
                 {
                     "command": "snippetDesk.insertSnippet",
                     "when": "false"
+                },
+                {
+                    "command": "snippetDesk.editSnippet",
+                    "when": "false"
+                },
+                {
+                    "command": "snippetDesk.newSnippetsFile",
+                    "when": "false"
                 }
             ],
             "view/title": [
@@ -107,6 +114,16 @@
             {
                 "command": "snippetDesk.insertSnippet",
                 "title": "Insert Snippet",
+                "category": "Snippet Desk"
+            },
+            {
+                "command": "snippetDesk.editSnippet",
+                "title": "Edit Snippet",
+                "category": "Snippet Desk"
+            },
+            {
+                "command": "snippetDesk.newSnippetsFile",
+                "title": "New Snippets File",
                 "category": "Snippet Desk"
             }
         ]

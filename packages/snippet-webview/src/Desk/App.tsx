@@ -5,7 +5,9 @@ import { reCreateLang } from './lang';
 import DeskList from './DeskList';
 import Editor from './Editor';
 
-type ReceivedMessage = IMessage<'completeInit' | 'updateSnippetsInfo' | 'changeLanguage'>;
+type ReceivedMessage = IMessage<
+    'completeInit' | 'updateSnippetsInfo' | 'changeLanguage' | 'editSnippet' | 'setLanguages'
+>;
 
 function App() {
     const [initFinished, setInitFinished] = useState(false);
@@ -13,10 +15,10 @@ function App() {
     const { state, dispatch } = store;
 
     useEffect(() => {
-        // const vscode = window.acquireVsCodeApi();
-        // dispatch({ type: 'setVscode', data: vscode });
-        // vscode.postMessage({ type: 'prepareToInit' });
-        // eslint-disable-next-line
+        const vscode = window.acquireVsCodeApi();
+        dispatch({ type: 'setVscode', data: vscode });
+        vscode.postMessage({ type: 'prepareToInit' });
+        // eslint-disable-next-line;
     }, []);
 
     useEffect(() => {
@@ -32,6 +34,13 @@ function App() {
                 case 'completeInit':
                     setInitFinished(true);
                     break;
+                case 'editSnippet':
+                    dispatch({ type: 'setEditting', data: message.data });
+                    dispatch({ type: 'switchPage', data: 'editor' });
+                    break;
+                case 'setLanguages':
+                    dispatch({ type: 'setLanguages', data: message.data });
+                    break;
                 default:
                     break;
             }
@@ -39,9 +48,9 @@ function App() {
         // eslint-disable-next-line
     }, []);
 
-    // if (!initFinished) {
-    //     return null;
-    // }
+    if (!initFinished) {
+        return null;
+    }
 
     return (
         <Context.Provider value={store}>

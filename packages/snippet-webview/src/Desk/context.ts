@@ -1,20 +1,38 @@
 import { createContext, useReducer, Dispatch, useContext } from 'react';
 import { ISnippetsInfo, IVscode } from '../type';
 
-type Vscode = IVscode<'prepareToInit' | 'deleteSnippetFile' | 'renameSnippetFile' | 'deleteSnippet'>;
+type Vscode = IVscode<
+    | 'prepareToInit'
+    | 'deleteSnippetFile'
+    | 'renameSnippetFile'
+    | 'deleteSnippet'
+    | 'editSnippet'
+    | 'getLanguages'
+    | 'addSnippet'
+    | 'newSnippetsFile'
+>;
 type Page = 'list' | 'editor';
+interface IEditing {
+    fsPath: string;
+    // 有name为编辑，无name为新增snippet
+    snippetName?: string;
+}
 type Action =
     | { type: 'updateSnippetsInfo'; data: ISnippetsInfo }
     | { type: 'setVscode'; data: any }
-    | { type: 'switchPage'; data: Page };
+    | { type: 'switchPage'; data: Page }
+    | { type: 'setEditting'; data: IEditing | undefined }
+    | { type: 'setLanguages'; data: string[] };
 interface IContextState {
     snippetsInfo: ISnippetsInfo;
     vscode: Vscode | null;
     page: Page;
+    editing?: IEditing;
+    languages: string[];
 }
 
 const defaultSnippetsInfo: ISnippetsInfo = {
-    globalSnippetsInfo: {
+    generalSnippetsInfo: {
         '/user/kjs/ksd': {
             name: 'test',
             extname: '.json',
@@ -44,7 +62,7 @@ const defaultSnippetsInfo: ISnippetsInfo = {
             }
         }
     },
-    workspaceSnippetsInfo: {
+    projectSnippetsInfo: {
         '/user/jk/lkj': {
             project: 'platform-esop',
             name: 'testp',
@@ -89,7 +107,9 @@ const defaultSnippetsInfo: ISnippetsInfo = {
 const defaultContextState: IContextState = {
     snippetsInfo: defaultSnippetsInfo,
     vscode: null,
-    page: 'editor'
+    page: 'list',
+    editing: undefined,
+    languages: []
 };
 
 const Context = createContext<{ state: IContextState; dispatch: Dispatch<Action> }>({
@@ -105,6 +125,10 @@ const reducer = (state: IContextState, action: Action): IContextState => {
             return { ...state, vscode: action.data };
         case 'switchPage':
             return { ...state, page: action.data };
+        case 'setEditting':
+            return { ...state, editing: action.data };
+        case 'setLanguages':
+            return { ...state, languages: action.data };
         default:
             throw new Error();
     }

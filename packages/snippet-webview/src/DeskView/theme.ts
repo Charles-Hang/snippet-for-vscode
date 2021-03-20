@@ -36,6 +36,10 @@ const theme = extendTheme({
                 fontSize: 'var(--vscode-font-size)'
             },
             variants: {
+                cancel: {
+                    padding: '0 6px',
+                    height: 'auto'
+                },
                 primary: {
                     border: '1px solid',
                     borderColor: 'var(--vscode-list-highlightForeground)',

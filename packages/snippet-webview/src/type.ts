@@ -1,15 +1,15 @@
 export interface ISnippetsInfo {
-    globalSnippetsInfo: GlobalSnippetsInfo;
-    workspaceSnippetsInfo: WorkspaceSnippetsInfo;
+    generalSnippetsInfo: GeneralSnippetsInfo;
+    projectSnippetsInfo: ProjectSnippetsInfo;
 }
 
-interface IGlobalSnippetsInfoItem {
+interface IGeneralSnippetsInfoItem {
     name: string;
     extname: string;
     snippets: Record<string, ISnippet>;
 }
 
-interface IWorkspaceSnippetsInfoItem {
+interface IProjectSnippetsInfoItem {
     project: string;
     name: string;
     extname: string;
@@ -23,8 +23,8 @@ export interface ISnippet {
     description?: string;
 }
 
-export type GlobalSnippetsInfo = Record<string, IGlobalSnippetsInfoItem>;
-export type WorkspaceSnippetsInfo = Record<string, IWorkspaceSnippetsInfoItem>;
+export type GeneralSnippetsInfo = Record<string, IGeneralSnippetsInfoItem>;
+export type ProjectSnippetsInfo = Record<string, IProjectSnippetsInfoItem>;
 
 export interface IVscode<T> {
     getState(): any;
